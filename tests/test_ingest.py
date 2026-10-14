@@ -22,3 +22,17 @@ def test_extraer_es_incremental(tmp_path):
     assert extraer(date(2026, 9, 1), date(2026, 9, 3), c, raw_dir=tmp_path) == 3
     assert extraer(date(2026, 9, 1), date(2026, 9, 4), c, raw_dir=tmp_path) == 1
     assert c.requests_hechos == 4
+
+
+def test_errores_no_exponen_ticket():
+    import requests
+    import pytest
+
+    class SesionRota:
+        def get(self, url, params, timeout):
+            raise requests.ConnectionError(f"fallo en {url}?ticket={params['ticket']}")
+
+    c = MercadoPublicoClient(ticket="SECRETO-123", pausa_s=0, session=SesionRota())
+    with pytest.raises(ConnectionError) as exc:
+        c._get("licitaciones.json", {}, reintentos=1)
+    assert "SECRETO-123" not in str(exc.value)

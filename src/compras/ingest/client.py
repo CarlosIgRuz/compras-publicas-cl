@@ -31,15 +31,25 @@ class MercadoPublicoClient:
 
     def _get(self, recurso: str, params: dict, reintentos: int = 3) -> dict:
         params = {**params, "ticket": self.ticket}
+        ultimo_error = "sin respuesta"
         for intento in range(reintentos):
-            resp = self.session.get(f"{BASE_URL}/{recurso}", params=params, timeout=30)
-            self.requests_hechos += 1
-            if resp.status_code == 200:
-                time.sleep(self.pausa_s)
-                return resp.json()
+            try:
+                resp = self.session.get(f"{BASE_URL}/{recurso}", params=params, timeout=30)
+            except requests.RequestException as e:
+                ultimo_error = self._sin_ticket(str(e))
+            else:
+                self.requests_hechos += 1
+                if resp.status_code == 200:
+                    time.sleep(self.pausa_s)
+                    return resp.json()
+                ultimo_error = f"HTTP {resp.status_code}"
             time.sleep(2 ** intento)  # backoff ante errores/limitación
-        resp.raise_for_status()
-        return {}
+        # `from None` evita que la traza original (con la URL y el ticket) llegue a los logs
+        raise ConnectionError(f"Fallo al consultar {recurso}: {ultimo_error}") from None
+
+    def _sin_ticket(self, texto: str) -> str:
+        """Nunca exponer el ticket en mensajes de error ni logs."""
+        return texto.replace(self.ticket, "***")
 
     def licitaciones_por_fecha(self, d: date) -> list[dict]:
         """Listado (resumen) de licitaciones publicadas en una fecha."""
