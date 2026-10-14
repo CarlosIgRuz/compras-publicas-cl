@@ -4,11 +4,11 @@
 > Para retomar, basta decirle al agente: **"continúa con compras-publicas-cl"**.
 
 ## Siguiente tarea
-**P1.2 — Primera descarga real.** Ticket ya en `.env`. La red del agente bloquea `api.mercadopublico.cl`: la ingesta se ejecuta en Windows con `descargar.bat` (o se pide habilitar el dominio en la configuración de red de Claude). Push a GitHub lo hace el usuario desde Windows (`git push -u origin main`).
+**P1.3 — Descarga del detalle por licitación** (montos, organismo, rubro, n° de oferentes), con caché y bajo el cupo diario. El trabajo ahora se hace en la nube; el PC ya no es necesario.
 
 ## Proyecto 1 · Pipeline + modelo en producción (~2 semanas)
 - [x] P1.1 Estructura del repo, cliente de la API, ingesta incremental, tests, CI
-- [ ] P1.2 Ticket en `.env` + backfill de ~6 meses de listados diarios
+- [x] P1.2 Ticket como secret de GitHub + backfill de listados diarios (2026-04-01 → 2026-10-13) vía GitHub Actions
 - [ ] P1.3 Descarga de detalle por licitación (con caché, respetando cupo de 10k/día)
 - [ ] P1.4 Carga a DuckDB + modelos dbt `staging` (limpieza, tipos, fechas)
 - [ ] P1.5 Marts dbt: licitaciones, organismos, rubros, oferentes
@@ -32,3 +32,4 @@
 ## Bitácora
 - **2026-10-14** — Creado el repo: estructura, `AGENTS.md`, `DECISIONS.md`, cliente de la API con reintentos, ingesta incremental por día (no repite descargas), 2 tests pasando, CI en GitHub Actions.
 - **2026-10-14** — Ticket configurado. Remoto `origin` → github.com/CarlosIgRuz/compras-publicas-cl (integrado su commit inicial). Corregida fuga del ticket en mensajes de error (+test). Añadido `descargar.bat` para ingesta nativa en Windows. Hallazgo: el proxy del agente bloquea la API de ChileCompra.
+- **2026-10-14** — Repo publicado en GitHub. Ingesta movida a GitHub Actions (`ingesta.yml`): cron nocturno 03:15 Chile + ejecución manual con fechas; ticket como secret cifrado. Prueba 2026-10-01: 910 licitaciones, 35 KB comprimido. Lanzado backfill de 6 meses.
