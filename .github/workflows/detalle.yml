@@ -1,0 +1,41 @@
+name: Detalle de licitaciones
+# Corre cada noche a las 02:00 UTC = 23:00 Chile en horario de verano (22:00 en invierno),
+# dentro del horario recomendado por ChileCompra (22:00–07:00). Comparte el grupo de
+# concurrencia con la ingesta de listados (06:15 UTC) para que nunca empujen a la vez.
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+    inputs:
+      tope: { description: "Máximo de requests (fuera de 22–07 Chile se limita a 100)", required: false, default: "9000" }
+      max_minutos: { description: "Minutos máximos de descarga", required: false, default: "240" }
+
+permissions:
+  contents: write
+
+concurrency: ingesta
+
+jobs:
+  detalle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 260
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install requests python-dotenv
+      - name: Descargar detalle
+        env:
+          MERCADO_PUBLICO_TICKET: ${{ secrets.MERCADO_PUBLICO_TICKET }}
+          PYTHONPATH: src
+        run: python -m compras.ingest.detalle --tope "${{ inputs.tope || '9000' }}" --max-minutos "${{ inputs.max_minutos || '240' }}"
+      - name: Guardar datos en el repo (también el checkpoint si hubo error)
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/raw/detalle 2>/dev/null || exit 0
+          git diff --cached --quiet && exit 0
+          git commit -m "data: detalle $(date -u +%F) [Fuente: Dirección ChileCompra]"
+          git pull --rebase
+          git push
