@@ -37,3 +37,7 @@ python -m compras.ingest.extract --desde 2026-09-01 --hasta 2026-09-07
 - `docs/ROADMAP.md` — plan y bitácora de avance
 - `AGENTS.md` — instrucciones que guían a los agentes en este repo
 - `DECISIONS.md` — decisiones técnicas tomadas por mí y correcciones al agente
+
+## Fuente de los datos
+Datos obtenidos de la API de Mercado Público. **Fuente: Dirección ChileCompra.**
+El uso se rige por las [Políticas y Condiciones de Uso de la API](https://api.mercadopublico.cl): máximo 10.000 solicitudes diarias por ticket; las descargas masivas se programan entre 22:00 y 07:00.
