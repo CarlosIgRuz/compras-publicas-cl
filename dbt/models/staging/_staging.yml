@@ -23,3 +23,39 @@ models:
         data_tests: [not_null]
       - name: tipo
         description: Tipo de licitación extraído del código (L1, LE, LP, LR, ...).
+
+  - name: stg_detalle
+    description: >
+      Una fila por licitación con su detalle tipado (organismo, montos, fechas, n° de oferentes).
+      Sin datos personales de funcionarios. Fuente: Dirección ChileCompra.
+    columns:
+      - name: codigo
+        data_tests: [unique, not_null]
+      - name: estado
+        data_tests:
+          - accepted_values:
+              arguments: { values: [publicada, cerrada, desierta, adjudicada, revocada, suspendida] }
+              config: { severity: warn }
+      - name: fecha_publicacion
+        description: Fecha real de publicación (el listado diario no la entrega).
+        data_tests: [not_null]
+      - name: numero_oferentes
+        description: Solo existe para adjudicadas y desiertas.
+      - name: monto_estimado
+        description: Falta en ~48% de los casos (el organismo puede ocultarlo).
+      - name: codigo_organismo
+        data_tests: [not_null]
+
+  - name: stg_detalle_items
+    description: "Una fila por ítem de cada licitación, con proveedor y monto adjudicado si existe. Fuente: Dirección ChileCompra."
+    data_tests:
+      - unique_combination:
+          arguments: { columns: [codigo, posicion] }
+    columns:
+      - name: codigo
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: { to: ref('stg_detalle'), field: codigo }
+      - name: monto_adjudicado
+        description: Cantidad × monto unitario adjudicado (la API a veces invierte ambos campos).

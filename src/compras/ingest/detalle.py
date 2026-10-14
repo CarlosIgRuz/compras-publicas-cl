@@ -29,6 +29,7 @@ from zoneinfo import ZoneInfo
 from .client import MercadoPublicoClient
 
 LISTADOS_DIR = Path("data/raw/licitaciones")
+BITACORA = Path("data/logs/detalle_corridas.jsonl")
 DETALLE_DIR = Path("data/raw/detalle")
 MADUREZ_DIAS = 60
 TOPE_REQUESTS = 9000
@@ -150,13 +151,37 @@ def extraer_detalle(
     return res
 
 
+def registrar_corrida(res: Resumen, client: MercadoPublicoClient, bitacora: Path = BITACORA) -> dict:
+    """Agrega una línea con el resumen de la corrida (sin secretos) a la bitácora versionada.
+    Permite revisar el uso del cupo y los rechazos de la API sin acceso a los logs de Actions."""
+    fila = {
+        "fin": datetime.now(TZ_CHILE).isoformat(timespec="seconds"),
+        "requests": res.requests,
+        "descargados": res.descargados,
+        "requests_por_licitacion": round(res.requests / res.descargados, 2) if res.descargados else None,
+        "dias_completos": len(res.dias_completos),
+        "motivo_fin": res.motivo_fin,
+        "error": res.error,
+        "respuestas_http": dict(client.respuestas),
+        "pausa_final_s": round(client.pausa_s, 2),
+    }
+    bitacora.parent.mkdir(parents=True, exist_ok=True)
+    with bitacora.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(fila, ensure_ascii=False) + "\n")
+    return fila
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("--tope", type=int, default=TOPE_REQUESTS, help="máximo de requests en esta corrida")
     p.add_argument("--max-minutos", type=float, default=240)
     p.add_argument("--madurez", type=int, default=MADUREZ_DIAS, help="días mínimos desde la publicación")
+    p.add_argument("--pausa", type=float, default=1.0, help="segundos base entre requests")
     a = p.parse_args(argv)
-    res = extraer_detalle(MercadoPublicoClient(), tope=a.tope, max_minutos=a.max_minutos, madurez=a.madurez)
+    client = MercadoPublicoClient(pausa_s=a.pausa)
+    res = extraer_detalle(client, tope=a.tope, max_minutos=a.max_minutos, madurez=a.madurez)
+    print(f"Respuestas HTTP: {dict(client.respuestas)} · pausa final: {client.pausa_s:.2f}s")
+    registrar_corrida(res, client)
     print(
         f"Días completos: {len(res.dias_completos)} · detalles nuevos: {res.descargados} · "
         f"requests: {res.requests} · fin: {res.motivo_fin}"

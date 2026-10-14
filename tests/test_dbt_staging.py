@@ -26,6 +26,29 @@ def test_stg_listados(tmp_path, monkeypatch):
         {"CodigoExterno": "2-5-LP26", "Nombre": "B", "CodigoEstado": 15, "FechaCierre": None},
     ])
     escribir(raw / "licitaciones", "fecha=2026-07-02.json.gz", [])  # día vacío (domingo)
+    escribir(raw / "detalle", "fecha=2026-07-01.json.gz", [
+        {"codigo": "1-1-LE26", "descargado": "2026-10-14T03:00:00-03:00", "detalle": {
+            "CodigoEstado": 8, "Estado": "Adjudicada", "Tipo": "LE", "CodigoTipo": 1, "Nombre": "A",
+            "Comprador": {"CodigoOrganismo": "7479", "NombreOrganismo": "HOSPITAL X", "RegionUnidad": "Región del Biobío ",
+                          "NombreUsuario": "Persona Funcionaria"},
+            "Moneda": "CLP", "MontoEstimado": None,
+            "Fechas": {"FechaPublicacion": "2026-06-01T10:00:00", "FechaCierre": "2026-06-20T15:00:00",
+                       "FechaAdjudicacion": "1900-01-01T00:00:00"},
+            "Adjudicacion": {"NumeroOferentes": 3, "Tipo": 2},
+            "Items": {"Cantidad": 2, "Listado": [
+                # mismo ítem adjudicado a dos proveedores; el segundo con cantidad y monto invertidos
+                {"Correlativo": 1, "Categoria": "Salud / Camillas", "Cantidad": 2.0,
+                 "Adjudicacion": {"RutProveedor": "76.1-1", "Cantidad": 1.0, "MontoUnitario": 500.0}},
+                {"Correlativo": 1, "Categoria": "Salud / Camillas", "Cantidad": 2.0,
+                 "Adjudicacion": {"RutProveedor": "77.2-2", "Cantidad": 700.0, "MontoUnitario": 1.0}},
+            ]},
+        }},
+        {"codigo": "2-5-LP26", "descargado": "2026-10-14T03:00:01-03:00", "detalle": {
+            "CodigoEstado": 15, "Estado": "Revocada", "Comprador": {"CodigoOrganismo": "1"},
+            "Fechas": {"FechaPublicacion": "2026-06-02T10:00:00"}, "Adjudicacion": None,
+            "Items": {"Cantidad": 0, "Listado": []},
+        }},
+    ])
     db = tmp_path / "w.duckdb"
     monkeypatch.setenv("DUCKDB_PATH", str(db))
 
@@ -41,6 +64,23 @@ def test_stg_listados(tmp_path, monkeypatch):
     ).fetchall()
     assert [(c, e, t) for c, e, t, _ in filas] == [
         ("1-1-LE26", "desierta", "LE"),
-        ("2-5-LP26", "no_documentado_15", "LP"),
+        ("2-5-LP26", "revocada", "LP"),
     ]
     assert str(filas[0][3]).startswith("2026-07-01 15:04:09")
+
+    con = duckdb.connect(str(db))
+    det = con.sql(
+        "select codigo, estado, region, numero_oferentes, fecha_adjudicacion, monto_estimado "
+        "from stg_detalle order by codigo"
+    ).fetchall()
+    assert det == [
+        ("1-1-LE26", "adjudicada", "Región del Biobío", 3, None, None),  # 1900 → NULL, región sin espacio
+        ("2-5-LP26", "revocada", None, None, None, None),
+    ]
+    columnas = [c[0] for c in con.sql("describe stg_detalle").fetchall()]
+    assert not any("usuario" in c for c in columnas)  # sin datos personales de funcionarios
+
+    items = con.sql(
+        "select posicion, correlativo, rubro, rut_proveedor, monto_adjudicado from stg_detalle_items order by posicion"
+    ).fetchall()
+    assert items == [(1, 1, "Salud", "76.1-1", 500.0), (2, 1, "Salud", "77.2-2", 700.0)]

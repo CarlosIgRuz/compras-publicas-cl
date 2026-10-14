@@ -91,3 +91,47 @@ def test_horario_nocturno():
     assert en_horario_nocturno(datetime(2026, 10, 14, 22, 30, tzinfo=TZ_CHILE))
     assert en_horario_nocturno(datetime(2026, 10, 15, 6, 59, tzinfo=TZ_CHILE))
     assert not en_horario_nocturno(datetime(2026, 10, 15, 7, 0, tzinfo=TZ_CHILE))
+
+
+def test_cliente_cuenta_respuestas_y_adapta_pausa(monkeypatch):
+    import compras.ingest.client as cl
+
+    monkeypatch.setattr(cl.time, "sleep", lambda s: None)
+
+    class Resp:
+        def __init__(self, code):
+            self.status_code = code
+
+        def json(self):
+            return {"Listado": [{"CodigoExterno": "X"}]}
+
+    class Sesion:
+        def __init__(self, codigos):
+            self.codigos = list(codigos)
+
+        def get(self, url, params, timeout):
+            return Resp(self.codigos.pop(0))
+
+    c = cl.MercadoPublicoClient(ticket="t", pausa_s=1.0, session=Sesion([429, 200]))
+    assert c.licitacion("X") == {"CodigoExterno": "X"}
+    assert c.respuestas == {"429": 1, "200": 1}
+    assert c.requests_hechos == 2
+    assert c.pausa_s == 1.5  # se alargó tras el rechazo
+
+    c.session = Sesion([200] * cl.MercadoPublicoClient.RACHA_PARA_ACORTAR)
+    for _ in range(cl.MercadoPublicoClient.RACHA_PARA_ACORTAR):
+        c.licitacion("X")
+    assert c.pausa_s == 1.2  # se acorta de a poco, sin bajar de la base
+
+
+def test_registrar_corrida(tmp_path):
+    from compras.ingest.detalle import Resumen, registrar_corrida
+
+    class C:
+        respuestas = {"200": 90, "500": 10}
+        pausa_s = 1.0
+
+    fila = registrar_corrida(Resumen(descargados=90, requests=100, motivo_fin="tope de requests"), C(), tmp_path / "b.jsonl")
+    assert fila["requests_por_licitacion"] == 1.11
+    guardada = json.loads((tmp_path / "b.jsonl").read_text())
+    assert guardada["respuestas_http"] == {"200": 90, "500": 10}
