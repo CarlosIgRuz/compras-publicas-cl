@@ -28,6 +28,7 @@ python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\act
 pip install -r requirements.txt
 cp .env.example .env    # pega tu ticket de la API
 python -m compras.ingest.extract --desde 2026-09-01 --hasta 2026-09-07
+dbt build --project-dir dbt --profiles-dir dbt   # crea data/warehouse.duckdb leyendo data/raw
 ```
 
 ## Estructura

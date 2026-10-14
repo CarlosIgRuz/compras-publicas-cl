@@ -4,13 +4,13 @@
 > Para retomar, basta decirle al agente: **"continúa con compras-publicas-cl"**.
 
 ## Siguiente tarea
-**Revisar la primera corrida de `detalle.yml`** (Actions, 23:00 Chile): que termine sin error, cuánto pesa un día de detalle comprimido y qué campos trae el JSON (montos, organismo, rubro, oferentes). Con eso, **P1.4 — carga a DuckDB + staging dbt**. El backfill de detalle se completa solo en ~5 noches (~40k códigos maduros a la fecha, tope 9.000/noche).
+**P1.4 (segunda mitad) — `stg_detalle`.** Cuando la primera corrida de `detalle.yml` haya subido `data/raw/detalle/`, revisar: si terminó sin error, cuánto pesa cada día comprimido y qué campos trae el JSON (montos, organismo, rubro, fechas, n° de oferentes). Con eso, escribir `stg_detalle` y sus tests. Después: P1.5 marts.
 
 ## Proyecto 1 · Pipeline + modelo en producción (~2 semanas)
 - [x] P1.1 Estructura del repo, cliente de la API, ingesta incremental, tests, CI
 - [x] P1.2 Ticket como secret de GitHub + backfill de listados diarios (2026-04-01 → 2026-10-13) vía GitHub Actions
 - [x] P1.3 Descarga de detalle por licitación (con caché, checkpoint, tope de 9.000 requests/noche y madurez de 60 días) — backfill en curso vía `detalle.yml`
-- [ ] P1.4 Carga a DuckDB + modelos dbt `staging` (limpieza, tipos, fechas)
+- [ ] P1.4 Carga a DuckDB + modelos dbt `staging` (limpieza, tipos, fechas) — `stg_listados` listo; falta `stg_detalle`
 - [ ] P1.5 Marts dbt: licitaciones, organismos, rubros, oferentes
 - [ ] P1.6 EDA en notebook + definición del objetivo (¿licitación desierta? ¿n° de oferentes?)
 - [ ] P1.7 Baseline + LightGBM con MLflow (split temporal, varias métricas)
@@ -34,3 +34,4 @@
 - **2026-10-14** — Ticket configurado. Remoto `origin` → github.com/CarlosIgRuz/compras-publicas-cl (integrado su commit inicial). Corregida fuga del ticket en mensajes de error (+test). Añadido `descargar.bat` para ingesta nativa en Windows. Hallazgo: el proxy del agente bloquea la API de ChileCompra.
 - **2026-10-14** — Repo publicado en GitHub. Ingesta movida a GitHub Actions (`ingesta.yml`): cron nocturno 03:15 Chile + ejecución manual con fechas; ticket como secret cifrado. Prueba 2026-10-01: 910 licitaciones, 35 KB comprimido. Lanzado backfill de 6 meses.
 - **2026-10-14** — Revisados los 12 días vacíos del backfill: todos son domingos (los otros domingos traen 0–5 licitaciones), no fallas de la API → no se re-descargan. P1.3: `compras.ingest.detalle` + workflow nocturno `detalle.yml`. Descarga el detalle por código de días publicados hace ≥60 días, sin repetir códigos (472 aparecen en dos días), con checkpoint `.parcial.jsonl` para retomar si se corta, tope de 9.000 requests y 240 min, y tope de 100 fuera de 22–07 Chile. 6 tests nuevos (9 en total).
+- **2026-10-14** — P1.4 (primera mitad): proyecto dbt-duckdb (`dbt/`) que lee `data/raw` directo y materializa en `data/warehouse.duckdb`. `stg_listados` con tipos, estado legible, tipo de licitación desde el código y deduplicación (266 licitaciones venían repetidas en el mismo día con milisegundos distintos; lo detectó el test de unicidad). Test pytest que corre `dbt build` sobre datos de juguete; CI instala dbt. **Hallazgo:** el listado diario no es "publicadas ese día", sino el día del último evento según el estado actual (adjudicadas: día de adjudicación; desiertas/cerradas: día de cierre; publicadas: día de publicación). Las fechas de publicación reales vendrán del detalle.

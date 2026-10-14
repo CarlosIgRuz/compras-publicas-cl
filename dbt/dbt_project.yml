@@ -1,0 +1,18 @@
+name: compras
+version: "0.1.0"
+config-version: 2
+profile: compras
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+target-path: target
+test-paths: ["tests"]
+
+vars:
+  # Ruta a los datos crudos, relativa a la raíz del repo (desde donde se corre dbt).
+  raw_dir: "data/raw"
+
+models:
+  compras:
+    staging:
+      +materialized: view

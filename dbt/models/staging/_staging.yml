@@ -1,0 +1,25 @@
+version: 2
+
+models:
+  - name: stg_listados
+    description: >
+      Una fila por licitación y día de listado (data/raw/licitaciones), con tipos y estado legible.
+      Fuente: Dirección ChileCompra.
+    data_tests:
+      - unique_combination:
+          arguments: { columns: [codigo, fecha_listado] }
+    columns:
+      - name: codigo
+        description: Código externo de la licitación (ej. 1350137-3-LE26).
+        data_tests: [not_null]
+      - name: codigo_estado
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments: { values: [5, 6, 7, 8, 15, 16, 18, 19] }
+              config: { severity: warn }
+      - name: fecha_listado
+        description: Día del listado del que proviene la fila (nombre del archivo crudo).
+        data_tests: [not_null]
+      - name: tipo
+        description: Tipo de licitación extraído del código (L1, LE, LP, LR, ...).
