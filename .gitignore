@@ -2,7 +2,6 @@
 .venv/
 __pycache__/
 *.pyc
-data/raw/
 data/*.duckdb
 mlruns/
 dbt/target/
