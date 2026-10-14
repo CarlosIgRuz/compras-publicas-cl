@@ -4,7 +4,7 @@
 > Para retomar, basta decirle al agente: **"continúa con compras-publicas-cl"**.
 
 ## Siguiente tarea
-**P1.2 — Conseguir ticket y hacer la primera descarga real** (requiere acción tuya: pegar el ticket en `.env`).
+**P1.2 — Primera descarga real.** Ticket ya en `.env`. La red del agente bloquea `api.mercadopublico.cl`: la ingesta se ejecuta en Windows con `descargar.bat` (o se pide habilitar el dominio en la configuración de red de Claude). Push a GitHub lo hace el usuario desde Windows (`git push -u origin main`).
 
 ## Proyecto 1 · Pipeline + modelo en producción (~2 semanas)
 - [x] P1.1 Estructura del repo, cliente de la API, ingesta incremental, tests, CI
@@ -31,3 +31,4 @@
 
 ## Bitácora
 - **2026-10-14** — Creado el repo: estructura, `AGENTS.md`, `DECISIONS.md`, cliente de la API con reintentos, ingesta incremental por día (no repite descargas), 2 tests pasando, CI en GitHub Actions.
+- **2026-10-14** — Ticket configurado. Remoto `origin` → github.com/CarlosIgRuz/compras-publicas-cl (integrado su commit inicial). Corregida fuga del ticket en mensajes de error (+test). Añadido `descargar.bat` para ingesta nativa en Windows. Hallazgo: el proxy del agente bloquea la API de ChileCompra.
