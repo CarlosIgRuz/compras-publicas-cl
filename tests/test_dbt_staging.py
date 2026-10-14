@@ -84,3 +84,16 @@ def test_stg_listados(tmp_path, monkeypatch):
         "select posicion, correlativo, rubro, rut_proveedor, monto_adjudicado from stg_detalle_items order by posicion"
     ).fetchall()
     assert items == [(1, 1, "Salud", "76.1-1", 500.0), (2, 1, "Salud", "77.2-2", 700.0)]
+
+    # marts
+    fct = con.sql(
+        "select codigo, tiene_resultado, es_desierta, rubro_principal, n_items, n_proveedores_adjudicados, "
+        "monto_adjudicado_clp, dias_abierta from fct_licitaciones order by codigo"
+    ).fetchall()
+    assert fct == [
+        ("1-1-LE26", True, False, "Salud", 1, 2, 1200.0, 19),
+        ("2-5-LP26", False, None, None, 0, 0, None, None),  # revocada: sin resultado → objetivo NULL
+    ]
+    assert con.sql("select count(*) from fct_adjudicaciones").fetchone() == (2,)
+    org = con.sql("select codigo_organismo, tasa_desierta from dim_organismos order by 1").fetchall()
+    assert org == [("1", None), ("7479", 0.0)]

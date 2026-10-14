@@ -1,0 +1,51 @@
+version: 2
+
+models:
+  - name: fct_licitaciones
+    description: "Una fila por licitación con detalle, rubro principal, montos y resultado. Fuente: Dirección ChileCompra."
+    columns:
+      - name: codigo
+        data_tests: [unique, not_null]
+      - name: es_desierta
+        description: "Objetivo candidato: true si quedó desierta; NULL si no tiene resultado final (revocada, suspendida, cerrada, publicada)."
+      - name: tiene_resultado
+        data_tests: [not_null]
+      - name: dias_abierta
+        description: Días entre publicación y cierre.
+        data_tests:
+          - non_negative:
+              config: { severity: warn }
+      - name: monto_estimado_clp
+        data_tests:
+          - non_negative
+
+  - name: fct_adjudicaciones
+    description: "Una fila por línea adjudicada (ítem × proveedor). Fuente: Dirección ChileCompra."
+    data_tests:
+      - unique_combination:
+          arguments: { columns: [codigo, posicion] }
+    columns:
+      - name: codigo
+        data_tests:
+          - relationships:
+              arguments: { to: ref('fct_licitaciones'), field: codigo }
+      - name: rut_proveedor
+        data_tests: [not_null]
+
+  - name: dim_organismos
+    description: "Una fila por organismo comprador. Fuente: Dirección ChileCompra."
+    columns:
+      - name: codigo_organismo
+        data_tests: [unique, not_null]
+      - name: tasa_desierta
+        data_tests:
+          - between_0_1
+
+  - name: dim_rubros
+    description: "Una fila por rubro (primer nivel de la clasificación de ChileCompra). Fuente: Dirección ChileCompra."
+    columns:
+      - name: rubro
+        data_tests: [unique, not_null]
+      - name: tasa_desierta
+        data_tests:
+          - between_0_1
