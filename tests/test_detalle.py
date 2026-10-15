@@ -135,3 +135,44 @@ def test_registrar_corrida(tmp_path):
     assert fila["requests_por_licitacion"] == 1.11
     guardada = json.loads((tmp_path / "b.jsonl").read_text())
     assert guardada["respuestas_http"] == {"200": 90, "500": 10}
+
+
+def test_cupo_diario_suma_lo_ya_usado(tmp_path):
+    from compras.ingest import detalle as m
+
+    listados, detalle = crear_listados(tmp_path, {"2026-07-01": [f"X{i}" for i in range(50)]})
+    c = ClienteFalso()
+    usados = {NOCHE.date().isoformat(): m.CUPO_DIARIO - 10}
+    res = extraer_detalle(c, ahora=NOCHE, listados_dir=listados, detalle_dir=detalle, usados_por_dia=usados)
+    assert res.motivo_fin == "cupo diario"
+    assert c.requests_hechos <= 10
+    assert res.requests_por_dia == {NOCHE.date().isoformat(): c.requests_hechos}
+
+
+def test_se_detiene_a_las_7(tmp_path):
+    from datetime import timedelta
+
+    listados, detalle = crear_listados(tmp_path, {"2026-07-01": [f"X{i}" for i in range(10)]})
+    t = [datetime(2026, 10, 15, 6, 59, 57, tzinfo=TZ_CHILE)]
+
+    def reloj():
+        t[0] += timedelta(seconds=1)
+        return t[0]
+
+    c = ClienteFalso()
+    res = extraer_detalle(c, ahora=t[0], reloj=reloj, listados_dir=listados, detalle_dir=detalle)
+    assert res.motivo_fin == "fin del horario nocturno"
+    assert c.requests_hechos == 2  # 06:59:58 y 06:59:59; a las 07:00:00 se detiene
+
+
+def test_usos_previos_desde_bitacora(tmp_path):
+    from compras.ingest.detalle import usos_previos
+
+    b = tmp_path / "b.jsonl"
+    b.write_text(
+        json.dumps({"requests_por_dia": {"2026-10-14": 100, "2026-10-15": 50}}) + "\n"
+        + json.dumps({"requests": 9000}) + "\n"  # corrida antigua sin desglose
+        + json.dumps({"requests_por_dia": {"2026-10-15": 25}}) + "\n"
+    )
+    assert usos_previos(b) == {"2026-10-14": 100, "2026-10-15": 75}
+    assert usos_previos(tmp_path / "no-existe.jsonl") == {}

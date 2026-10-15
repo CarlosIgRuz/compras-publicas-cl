@@ -9,8 +9,11 @@ Reglas (ver DECISIONS.md):
   (adjudicada / desierta / revocada) y no una foto de una licitación aún abierta.
 - Nunca repite descargas: un código ya guardado en cualquier día se omite; el avance se guarda en
   un checkpoint `fecha=YYYY-MM-DD.parcial.jsonl` y la corrida siguiente continúa desde ahí.
-- Tope interno de requests (bajo el límite de 10.000/día) y tope de minutos.
-- Fuera del horario 22:00–07:00 (Chile) el tope se reduce a FUERA_DE_HORARIO_MAX (pruebas pequeñas).
+- Cupo propio de CUPO_DIARIO requests por día calendario de Chile (bajo el límite de 10.000/día de la API),
+  sumando lo ya usado ese día según la bitácora `data/logs/detalle_corridas.jsonl`: una corrida atrasada o
+  repetida nunca pasa el límite. Además, tope de requests y de minutos por corrida.
+- Una corrida que parte de noche se detiene sola a las 07:00 (Chile). Fuera del horario 22:00–07:00 el tope
+  se reduce a FUERA_DE_HORARIO_MAX (pruebas pequeñas).
 
 Uso: python -m compras.ingest.detalle --tope 9000 --max-minutos 240
 """
@@ -24,6 +27,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from pathlib import Path
+from typing import Callable
 from zoneinfo import ZoneInfo
 
 from .client import MercadoPublicoClient
@@ -33,6 +37,7 @@ BITACORA = Path("data/logs/detalle_corridas.jsonl")
 DETALLE_DIR = Path("data/raw/detalle")
 MADUREZ_DIAS = 60
 TOPE_REQUESTS = 9000
+CUPO_DIARIO = 9000  # la ingesta de listados usa ~1 request/día; el resto queda de margen
 FUERA_DE_HORARIO_MAX = 100
 TZ_CHILE = ZoneInfo("America/Santiago")
 
@@ -89,6 +94,18 @@ class Resumen:
     requests: int = 0
     motivo_fin: str = "sin pendientes"
     error: str | None = None
+    requests_por_dia: dict[str, int] = field(default_factory=dict)
+
+
+def usos_previos(bitacora: Path = BITACORA) -> dict[str, int]:
+    """Requests ya usados por día calendario de Chile, según la bitácora de corridas."""
+    usados: dict[str, int] = {}
+    if bitacora.exists():
+        for linea in bitacora.read_text(encoding="utf-8").splitlines():
+            if linea.strip():
+                for dia, n in json.loads(linea).get("requests_por_dia", {}).items():
+                    usados[dia] = usados.get(dia, 0) + n
+    return usados
 
 
 def extraer_detalle(
@@ -100,10 +117,16 @@ def extraer_detalle(
     madurez: int = MADUREZ_DIAS,
     listados_dir: Path = LISTADOS_DIR,
     detalle_dir: Path = DETALLE_DIR,
+    usados_por_dia: dict[str, int] | None = None,
+    reloj: Callable[[], datetime] | None = None,
 ) -> Resumen:
-    ahora = ahora or datetime.now(TZ_CHILE)
+    if reloj is None:
+        reloj = (lambda: ahora) if ahora else (lambda: datetime.now(TZ_CHILE))
+    ahora = ahora or reloj()
     hoy = hoy or ahora.astimezone(TZ_CHILE).date()
-    if not en_horario_nocturno(ahora):
+    usados = usados_por_dia or {}
+    nocturna = en_horario_nocturno(ahora)
+    if not nocturna:
         tope = min(tope, FUERA_DE_HORARIO_MAX)
         print(f"Fuera del horario 22:00–07:00: tope reducido a {tope} requests")
     detalle_dir.mkdir(parents=True, exist_ok=True)
@@ -127,11 +150,22 @@ def extraer_detalle(
                 if (time.monotonic() - inicio) / 60 >= max_minutos:
                     res.motivo_fin, cortado = "tope de minutos", True
                     break
+                momento = reloj().astimezone(TZ_CHILE)
+                if nocturna and not en_horario_nocturno(momento):
+                    res.motivo_fin, cortado = "fin del horario nocturno", True
+                    break
+                dia = momento.date().isoformat()
+                if usados.get(dia, 0) + res.requests_por_dia.get(dia, 0) + 3 > CUPO_DIARIO:
+                    res.motivo_fin, cortado = "cupo diario", True
+                    break
+                antes = client.requests_hechos
                 try:
                     det = client.licitacion(codigo)
                 except ConnectionError as e:
                     res.motivo_fin, res.error, cortado = "error de API", str(e), True
                     break
+                finally:
+                    res.requests_por_dia[dia] = res.requests_por_dia.get(dia, 0) + client.requests_hechos - antes
                 registro = {"codigo": codigo, "descargado": datetime.now(TZ_CHILE).isoformat(timespec="seconds"), "detalle": det}
                 out.write(json.dumps(registro, ensure_ascii=False) + "\n")
                 out.flush()
@@ -159,6 +193,7 @@ def registrar_corrida(res: Resumen, client: MercadoPublicoClient, bitacora: Path
         "requests": res.requests,
         "descargados": res.descargados,
         "requests_por_licitacion": round(res.requests / res.descargados, 2) if res.descargados else None,
+        "requests_por_dia": res.requests_por_dia,
         "dias_completos": len(res.dias_completos),
         "motivo_fin": res.motivo_fin,
         "error": res.error,
@@ -179,7 +214,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--pausa", type=float, default=1.0, help="segundos base entre requests")
     a = p.parse_args(argv)
     client = MercadoPublicoClient(pausa_s=a.pausa)
-    res = extraer_detalle(client, tope=a.tope, max_minutos=a.max_minutos, madurez=a.madurez)
+    usados = usos_previos()
+    print(f"Requests ya usados por día (bitácora): {usados}")
+    res = extraer_detalle(client, tope=a.tope, max_minutos=a.max_minutos, madurez=a.madurez, usados_por_dia=usados)
     print(f"Respuestas HTTP: {dict(client.respuestas)} · pausa final: {client.pausa_s:.2f}s")
     registrar_corrida(res, client)
     print(

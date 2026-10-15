@@ -1,10 +1,13 @@
 name: Detalle de licitaciones
-# Corre cada noche a las 02:00 UTC = 23:00 Chile en horario de verano (22:00 en invierno),
-# dentro del horario recomendado por ChileCompra (22:00–07:00). Comparte el grupo de
-# concurrencia con la ingesta de listados (06:15 UTC) para que nunca empujen a la vez.
+# Dos disparos nocturnos dentro del horario recomendado por ChileCompra (22:00–07:00), en
+# minutos impares porque GitHub retrasa o descarta los cron a la hora en punto:
+#   02:17 UTC = 23:17 Chile en verano (22:17 en invierno) · 05:43 UTC = 02:43 (01:43) de respaldo.
+# Es seguro correr dos veces: el script respeta el cupo diario según la bitácora, retoma desde
+# el checkpoint y se detiene solo a las 07:00. Comparte el grupo de concurrencia con la ingesta.
 on:
   schedule:
-    - cron: "0 2 * * *"
+    - cron: "17 2 * * *"
+    - cron: "43 5 * * *"
   workflow_dispatch:
     inputs:
       tope: { description: "Máximo de requests (fuera de 22–07 Chile se limita a 100)", required: false, default: "9000" }
@@ -20,7 +23,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 260
     steps:
+      # ref: main (no el commit del disparo): una corrida en cola debe ver los datos y la
+      # bitácora que subió la anterior, para no repetir descargas ni pasar el cupo.
       - uses: actions/checkout@v4
+        with: { ref: main }
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
       - run: pip install requests python-dotenv
