@@ -71,12 +71,41 @@ def test_tope_deja_checkpoint_y_se_retoma(tmp_path):
     assert [r["codigo"] for r in leer_final(detalle, "2026-07-01")] == ["A", "B", "C", "D", "E"]
 
 
-def test_error_de_api_corta_sin_perder_avance(tmp_path):
-    listados, detalle = crear_listados(tmp_path, {"2026-07-01": ["A", "B", "C"]})
-    res = extraer_detalle(ClienteFalso(fallar_en="B"), ahora=NOCHE, listados_dir=listados, detalle_dir=detalle)
-    assert res.error and res.motivo_fin == "error de API"
-    lineas = (detalle / "fecha=2026-07-01.parcial.jsonl").read_text().splitlines()
-    assert [json.loads(x)["codigo"] for x in lineas] == ["A"]
+def test_un_codigo_con_error_no_detiene_la_corrida(tmp_path):
+    listados, detalle = crear_listados(tmp_path, {"2026-07-01": ["A", "B", "C"], "2026-07-02": ["D"]})
+    c = ClienteFalso(fallar_en="B")
+    res = extraer_detalle(c, ahora=NOCHE, listados_dir=listados, detalle_dir=detalle)
+    assert res.error is None and res.fallidos == 1
+    assert c.pedidos == ["A", "C", "D"]  # siguió con C y con el día siguiente
+    assert (detalle / "fecha=2026-07-01.parcial.jsonl").exists()  # día con error queda pendiente
+    assert (detalle / "fecha=2026-07-02.json.gz").exists()
+
+    # segunda corrida: B vuelve a fallar → se abandona y el día se cierra con B sin detalle
+    c2 = ClienteFalso(fallar_en="B")
+    extraer_detalle(c2, ahora=NOCHE, listados_dir=listados, detalle_dir=detalle)
+    assert c2.requests_hechos == 1  # solo reintentó B
+    final = {r["codigo"]: r for r in leer_final(detalle, "2026-07-01")}
+    assert set(final) == {"A", "B", "C"}
+    assert final["B"]["detalle"] is None and "HTTP 500" in final["B"]["error"]
+
+    # tercera corrida: nada pendiente
+    c3 = ClienteFalso()
+    extraer_detalle(c3, ahora=NOCHE, listados_dir=listados, detalle_dir=detalle)
+    assert c3.requests_hechos == 0
+
+
+def test_api_caida_detiene_la_corrida(tmp_path):
+    listados, detalle = crear_listados(tmp_path, {"2026-07-01": [f"X{i}" for i in range(20)]})
+
+    class Caida(ClienteFalso):
+        def licitacion(self, codigo):
+            self.requests_hechos += 1
+            raise ConnectionError("Fallo al consultar licitaciones.json: HTTP 503")
+
+    c = Caida()
+    res = extraer_detalle(c, ahora=NOCHE, listados_dir=listados, detalle_dir=detalle)
+    assert res.motivo_fin == "API caída" and res.error
+    assert c.requests_hechos == 5
 
 
 def test_fuera_de_horario_reduce_tope(tmp_path):

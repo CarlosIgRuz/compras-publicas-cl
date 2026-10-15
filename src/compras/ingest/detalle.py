@@ -37,6 +37,8 @@ BITACORA = Path("data/logs/detalle_corridas.jsonl")
 DETALLE_DIR = Path("data/raw/detalle")
 MADUREZ_DIAS = 60
 TOPE_REQUESTS = 9000
+MAX_INTENTOS_CODIGO = 2  # corridas distintas; luego el código se guarda como fallido y no se reintenta
+MAX_FALLOS_SEGUIDOS = 5  # más que esto se interpreta como API caída y se detiene la corrida
 CUPO_DIARIO = 9000  # la ingesta de listados usa ~1 request/día; el resto queda de margen
 FUERA_DE_HORARIO_MAX = 100
 TZ_CHILE = ZoneInfo("America/Santiago")
@@ -76,6 +78,28 @@ def codigos_guardados(detalle_dir: Path) -> set[str]:
     return vistos
 
 
+def codigos_resueltos(registros: list[dict]) -> set[str]:
+    """Códigos con detalle descargado, o que ya fallaron MAX_INTENTOS_CODIGO veces (se abandonan)."""
+    fallos: dict[str, int] = {}
+    resueltos: set[str] = set()
+    for r in registros:
+        if r.get("error"):
+            fallos[r["codigo"]] = fallos.get(r["codigo"], 0) + 1
+        else:
+            resueltos.add(r["codigo"])
+    return resueltos | {c for c, n in fallos.items() if n >= MAX_INTENTOS_CODIGO}
+
+
+def consolidar(registros: list[dict]) -> list[dict]:
+    """Un registro por código: el exitoso si existe; si no, el último error (detalle = null)."""
+    por_codigo: dict[str, dict] = {}
+    for r in registros:
+        previo = por_codigo.get(r["codigo"])
+        if previo is None or previo.get("error") or not r.get("error"):  # un éxito nunca se pisa con un error
+            por_codigo[r["codigo"]] = r
+    return list(por_codigo.values())
+
+
 def leer_parcial(p: Path) -> list[dict]:
     if not p.exists():
         return []
@@ -95,6 +119,7 @@ class Resumen:
     motivo_fin: str = "sin pendientes"
     error: str | None = None
     requests_por_dia: dict[str, int] = field(default_factory=dict)
+    fallidos: int = 0
 
 
 def usos_previos(bitacora: Path = BITACORA) -> dict[str, int]:
@@ -137,10 +162,12 @@ def extraer_detalle(
 
     for d in dias_pendientes(hoy, listados_dir, detalle_dir, madurez):
         parcial = ruta_parcial(d, detalle_dir)
-        hechos = {r["codigo"] for r in leer_parcial(parcial)}
-        faltan = [c for c in codigos_del_dia(d, listados_dir) if c not in hechos and c not in guardados]
+        codigos = [c for c in codigos_del_dia(d, listados_dir) if c not in guardados]
+        hechos = codigos_resueltos(leer_parcial(parcial))
+        faltan = [c for c in codigos if c not in hechos]
 
         cortado = False
+        seguidos = 0
         with parcial.open("a", encoding="utf-8") as out:
             for codigo in faltan:
                 # margen de 3: un código puede consumir hasta 3 requests con reintentos
@@ -159,21 +186,32 @@ def extraer_detalle(
                     res.motivo_fin, cortado = "cupo diario", True
                     break
                 antes = client.requests_hechos
+                registro = {"codigo": codigo, "descargado": datetime.now(TZ_CHILE).isoformat(timespec="seconds")}
                 try:
-                    det = client.licitacion(codigo)
+                    registro["detalle"] = client.licitacion(codigo)
                 except ConnectionError as e:
-                    res.motivo_fin, res.error, cortado = "error de API", str(e), True
-                    break
+                    # un código con error no detiene la corrida: se anota y se reintenta en otra corrida
+                    registro.update(detalle=None, error=str(e))
+                    res.fallidos += 1
+                    seguidos += 1
+                else:
+                    res.descargados += 1
+                    seguidos = 0
                 finally:
                     res.requests_por_dia[dia] = res.requests_por_dia.get(dia, 0) + client.requests_hechos - antes
-                registro = {"codigo": codigo, "descargado": datetime.now(TZ_CHILE).isoformat(timespec="seconds"), "detalle": det}
                 out.write(json.dumps(registro, ensure_ascii=False) + "\n")
                 out.flush()
-                res.descargados += 1
+                if seguidos >= MAX_FALLOS_SEGUIDOS:
+                    res.motivo_fin, res.error, cortado = "API caída", registro["error"], True
+                    break
         if cortado:  # se cortó a mitad del día: el checkpoint queda para la próxima corrida
             break
 
         registros = leer_parcial(parcial)
+        if not set(codigos) <= codigos_resueltos(registros):
+            print(f"{d}: quedan códigos con error; se reintentan en la próxima corrida")
+            continue  # el día queda en checkpoint; se sigue con el siguiente
+        registros = consolidar(registros)
         with gzip.open(ruta_final(d, detalle_dir), "wt", encoding="utf-8") as f:
             json.dump(registros, f, ensure_ascii=False)
         parcial.unlink()
@@ -195,6 +233,7 @@ def registrar_corrida(res: Resumen, client: MercadoPublicoClient, bitacora: Path
         "requests_por_licitacion": round(res.requests / res.descargados, 2) if res.descargados else None,
         "requests_por_dia": res.requests_por_dia,
         "dias_completos": len(res.dias_completos),
+        "fallidos": res.fallidos,
         "motivo_fin": res.motivo_fin,
         "error": res.error,
         "respuestas_http": dict(client.respuestas),
