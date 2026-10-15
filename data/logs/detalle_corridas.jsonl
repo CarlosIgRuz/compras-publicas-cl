@@ -1,0 +1,1 @@
+{"fin": "2026-10-15T03:59:28-03:00", "requests": 266, "descargados": 260, "requests_por_licitacion": 1.02, "requests_por_dia": {"2026-10-15": 266}, "dias_completos": 0, "motivo_fin": "error de API", "error": "Fallo al consultar licitaciones.json: HTTP 500", "respuestas_http": {"200": 260, "429": 4, "500": 2}, "pausa_final_s": 5.0}
