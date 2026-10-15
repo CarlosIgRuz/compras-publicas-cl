@@ -22,6 +22,14 @@ API Mercado Público ──► ingest (Python) ──► data/raw (JSON/Parquet)
          monitoreo drift (Evidently)
 ```
 
+## Primeros hallazgos (EDA, [notebook](notebooks/01_eda.ipynb))
+De ~69 mil licitaciones (abr–oct 2026), **el 20,7% de las que tienen resultado queda desierta**, una tasa muy estable mes a mes. Varía fuerte por tipo (3% en órdenes menores R1, 27% en licitaciones chicas L1, 46% en CO) y por rubro. Esa es la pregunta del modelo: **¿quedará desierta esta licitación?**, predicha al momento de publicarla.
+
+![Composición mensual y % de desiertas](docs/img/eda_meses.png)
+![% desiertas por tipo](docs/img/eda_tipos.png)
+
+*Fuente: Dirección ChileCompra.*
+
 ## Uso rápido
 ```bash
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
