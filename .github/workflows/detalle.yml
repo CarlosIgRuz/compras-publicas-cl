@@ -1,27 +1,31 @@
 name: Detalle de licitaciones
-# Dos disparos nocturnos dentro del horario recomendado por ChileCompra (22:00–07:00), en
-# minutos impares porque GitHub retrasa o descarta los cron a la hora en punto:
-#   02:17 UTC = 23:17 Chile en verano (22:17 en invierno) · 05:43 UTC = 02:43 (01:43) de respaldo.
-# Es seguro correr dos veces: el script respeta el cupo diario según la bitácora, retoma desde
-# el checkpoint y se detiene solo a las 07:00. Comparte el grupo de concurrencia con la ingesta.
+# GitHub retrasa los cron de forma variable (se observaron ~5 h). Por eso hay un disparo cada
+# 2 horas: los que caen fuera de 22:00–07:00 (Chile) terminan sin consultar la API
+# (--solo-nocturno) y los que caen dentro descargan hasta las 07:00, encadenándose por el grupo
+# de concurrencia `detalle`. Es seguro: el script respeta el cupo diario según la bitácora, retoma desde
+# el checkpoint y nunca repite descargas.
 on:
   schedule:
-    - cron: "17 2 * * *"
-    - cron: "43 5 * * *"
+    - cron: "17 */2 * * *"
   workflow_dispatch:
     inputs:
       tope: { description: "Máximo de requests (fuera de 22–07 Chile se limita a 100)", required: false, default: "9000" }
-      max_minutos: { description: "Minutos máximos de descarga", required: false, default: "240" }
+      max_minutos: { description: "Minutos máximos de descarga", required: false, default: "330" }
 
 permissions:
   contents: write
 
-concurrency: ingesta
+# Grupo propio: si compartiera el de la ingesta, un detalle en cola podría reemplazar
+# (cancelar) la ingesta diaria pendiente. No chocan al empujar: escriben carpetas distintas
+# y ambos hacen pull --rebase antes del push.
+concurrency:
+  group: detalle
+  cancel-in-progress: false
 
 jobs:
   detalle:
     runs-on: ubuntu-latest
-    timeout-minutes: 260
+    timeout-minutes: 350
     steps:
       # ref: main (no el commit del disparo): una corrida en cola debe ver los datos y la
       # bitácora que subió la anterior, para no repetir descargas ni pasar el cupo.
@@ -34,7 +38,11 @@ jobs:
         env:
           MERCADO_PUBLICO_TICKET: ${{ secrets.MERCADO_PUBLICO_TICKET }}
           PYTHONPATH: src
-        run: python -m compras.ingest.detalle --tope "${{ inputs.tope || '9000' }}" --max-minutos "${{ inputs.max_minutos || '240' }}"
+        run: >-
+          python -m compras.ingest.detalle
+          --tope "${{ inputs.tope || '9000' }}"
+          --max-minutos "${{ inputs.max_minutos || '330' }}"
+          ${{ github.event_name == 'schedule' && '--solo-nocturno' || '' }}
       - name: Guardar datos en el repo (también el checkpoint si hubo error)
         if: always()
         run: |

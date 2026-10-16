@@ -205,3 +205,18 @@ def test_usos_previos_desde_bitacora(tmp_path):
     )
     assert usos_previos(b) == {"2026-10-14": 100, "2026-10-15": 75}
     assert usos_previos(tmp_path / "no-existe.jsonl") == {}
+
+
+def test_solo_nocturno_no_consulta_la_api_de_dia(monkeypatch, tmp_path):
+    from compras.ingest import detalle as m
+
+    class Reloj(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return datetime(2026, 10, 16, 12, 0, tzinfo=TZ_CHILE)
+
+    monkeypatch.setattr(m, "datetime", Reloj)
+    monkeypatch.setattr(m, "MercadoPublicoClient", lambda **kw: (_ for _ in ()).throw(AssertionError("no debe crear cliente")))
+    monkeypatch.setattr(m, "BITACORA", tmp_path / "b.jsonl")
+    assert m.main(["--solo-nocturno"]) == 0
+    assert not (tmp_path / "b.jsonl").exists()  # tampoco ensucia la bitácora

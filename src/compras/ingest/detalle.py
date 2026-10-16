@@ -251,7 +251,12 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--max-minutos", type=float, default=240)
     p.add_argument("--madurez", type=int, default=MADUREZ_DIAS, help="días mínimos desde la publicación")
     p.add_argument("--pausa", type=float, default=1.0, help="segundos base entre requests")
+    p.add_argument("--solo-nocturno", action="store_true",
+                   help="fuera de 22:00–07:00 (Chile) termina sin consultar la API (para disparos programados)")
     a = p.parse_args(argv)
+    if a.solo_nocturno and not en_horario_nocturno(datetime.now(TZ_CHILE)):
+        print("Fuera del horario 22:00–07:00 (Chile): disparo programado sin efecto")
+        return 0
     client = MercadoPublicoClient(pausa_s=a.pausa)
     usados = usos_previos()
     print(f"Requests ya usados por día (bitácora): {usados}")
