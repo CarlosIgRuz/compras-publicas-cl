@@ -38,7 +38,8 @@ DETALLE_DIR = Path("data/raw/detalle")
 MADUREZ_DIAS = 60
 TOPE_REQUESTS = 9000
 MAX_INTENTOS_CODIGO = 2  # corridas distintas; luego el código se guarda como fallido y no se reintenta
-MAX_FALLOS_SEGUIDOS = 5  # más que esto se interpreta como API caída y se detiene la corrida
+MAX_FALLOS_SEGUIDOS = 5
+MAX_ESPERA_MIN = 150  # un disparo que llega hasta 2,5 h antes de las 22:00 espera en vez de terminar  # más que esto se interpreta como API caída y se detiene la corrida
 CUPO_DIARIO = 9000  # la ingesta de listados usa ~1 request/día; el resto queda de margen
 FUERA_DE_HORARIO_MAX = 100
 TZ_CHILE = ZoneInfo("America/Santiago")
@@ -109,6 +110,15 @@ def leer_parcial(p: Path) -> list[dict]:
 def en_horario_nocturno(ahora: datetime) -> bool:
     h = ahora.astimezone(TZ_CHILE).hour
     return h >= 22 or h < 7
+
+
+def minutos_hasta_ventana(ahora: datetime) -> float:
+    """Minutos que faltan para las 22:00 (Chile); 0 si ya se está dentro de la ventana."""
+    local = ahora.astimezone(TZ_CHILE)
+    if en_horario_nocturno(local):
+        return 0.0
+    apertura = local.replace(hour=22, minute=0, second=0, microsecond=0)
+    return (apertura - local).total_seconds() / 60
 
 
 @dataclass
@@ -254,9 +264,17 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--solo-nocturno", action="store_true",
                    help="fuera de 22:00–07:00 (Chile) termina sin consultar la API (para disparos programados)")
     a = p.parse_args(argv)
-    if a.solo_nocturno and not en_horario_nocturno(datetime.now(TZ_CHILE)):
-        print("Fuera del horario 22:00–07:00 (Chile): disparo programado sin efecto")
-        return 0
+    if a.solo_nocturno:
+        espera = minutos_hasta_ventana(datetime.now(TZ_CHILE))
+        if espera > MAX_ESPERA_MIN:
+            print("Fuera del horario 22:00–07:00 (Chile): disparo programado sin efecto")
+            return 0
+        if espera > 0:
+            # GitHub entrega los cron con horas de atraso: si este llegó poco antes de la ventana,
+            # esperar es mejor que perder la noche. La espera se descuenta del tiempo de descarga.
+            print(f"Esperando {espera:.0f} min hasta las 22:00 (Chile)")
+            time.sleep(espera * 60)
+            a.max_minutos = max(0.0, a.max_minutos - espera)
     client = MercadoPublicoClient(pausa_s=a.pausa)
     usados = usos_previos()
     print(f"Requests ya usados por día (bitácora): {usados}")

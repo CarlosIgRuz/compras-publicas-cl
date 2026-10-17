@@ -220,3 +220,40 @@ def test_solo_nocturno_no_consulta_la_api_de_dia(monkeypatch, tmp_path):
     monkeypatch.setattr(m, "BITACORA", tmp_path / "b.jsonl")
     assert m.main(["--solo-nocturno"]) == 0
     assert not (tmp_path / "b.jsonl").exists()  # tampoco ensucia la bitácora
+
+
+def test_minutos_hasta_ventana():
+    from compras.ingest.detalle import minutos_hasta_ventana
+
+    assert minutos_hasta_ventana(datetime(2026, 10, 16, 21, 28, tzinfo=TZ_CHILE)) == 32
+    assert minutos_hasta_ventana(datetime(2026, 10, 16, 23, 0, tzinfo=TZ_CHILE)) == 0
+    assert minutos_hasta_ventana(datetime(2026, 10, 17, 3, 0, tzinfo=TZ_CHILE)) == 0
+    assert minutos_hasta_ventana(datetime(2026, 10, 16, 13, 0, tzinfo=TZ_CHILE)) == 540
+
+
+def test_disparo_poco_antes_de_las_22_espera(monkeypatch, tmp_path):
+    from compras.ingest import detalle as m
+
+    class Reloj(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return datetime(2026, 10, 16, 21, 28, tzinfo=TZ_CHILE)
+
+    esperas, llamadas = [], {}
+    monkeypatch.setattr(m, "datetime", Reloj)
+    monkeypatch.setattr(m.time, "sleep", lambda s: esperas.append(s))
+    class ClienteMudo:
+        respuestas, pausa_s = {}, 1.0
+
+    monkeypatch.setattr(m, "MercadoPublicoClient", lambda **kw: ClienteMudo())
+    monkeypatch.setattr(m, "usos_previos", lambda: {})
+    monkeypatch.setattr(m, "registrar_corrida", lambda res, c: None)
+
+    def falso_extraer(client, **kw):
+        llamadas.update(kw)
+        return m.Resumen()
+
+    monkeypatch.setattr(m, "extraer_detalle", falso_extraer)
+    assert m.main(["--solo-nocturno", "--max-minutos", "330"]) == 0
+    assert esperas == [32 * 60]
+    assert llamadas["max_minutos"] == 298  # la espera se descuenta
