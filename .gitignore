@@ -11,4 +11,4 @@ dbt/logs/
 data/ingesta.log
 dbt/.user.yml
 data/mlflow.db
-models/
+/models/
