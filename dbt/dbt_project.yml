@@ -11,12 +11,22 @@ test-paths: ["tests"]
 vars:
   # Ruta a los datos crudos, relativa a la raíz del repo (desde donde se corre dbt).
   raw_dir: "data/raw"
+  # Cohorte del modelo (ver DECISIONS.md): publicadas desde el inicio de los listados y con
+  # al menos `horizonte_dias` de seguimiento antes del último listado disponible.
+  cohorte_desde: "2026-04-01"
+  horizonte_dias: 120
+  # Suavizado del historial: tasa previa = (desiertas + m·p0) / (n + m). p0 es una constante fija
+  # (tasa de desiertas de los listados, EDA) para no filtrar información del período de prueba.
+  suavizado_m: 10
+  tasa_previa_p0: 0.207
 
 models:
   compras:
     staging:
       +materialized: view
     marts:
+      +materialized: table
+    ml:
       +materialized: table
 
 flags:

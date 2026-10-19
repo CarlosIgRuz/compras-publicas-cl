@@ -1,0 +1,17 @@
+version: 2
+
+models:
+  - name: ml_licitaciones
+    description: >
+      Tabla de entrenamiento: variables conocidas al publicar + historial point-in-time del
+      organismo y del rubro. `en_cohorte` marca la cohorte sin sesgo de selección (ver DECISIONS.md).
+      Fuente: Dirección ChileCompra.
+    columns:
+      - name: codigo
+        data_tests: [unique, not_null]
+      - name: en_cohorte
+        data_tests: [not_null]
+      - name: org_tasa_desierta_previa
+        data_tests: [not_null, between_0_1]
+      - name: rubro_tasa_desierta_previa
+        data_tests: [not_null, between_0_1]
