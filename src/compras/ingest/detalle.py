@@ -5,8 +5,10 @@ Destino: data/raw/detalle/fecha=YYYY-MM-DD.json.gz — una lista de registros
 {"codigo", "descargado", "detalle"} por día de publicación.
 
 Reglas (ver DECISIONS.md):
-- Solo días "maduros" (publicados hace >= MADUREZ_DIAS): así el detalle refleja el estado final
-  (adjudicada / desierta / revocada) y no una foto de una licitación aún abierta.
+- Solo licitaciones ya resueltas según su listado (ESTADOS_FINALES: desierta, adjudicada, revocada,
+  suspendida). Las abiertas (publicada/cerrada) se omiten: reaparecen en el listado del día en que se
+  resuelven y se descargan desde ahí, con su estado final. MADUREZ_DIAS solo deja un margen para que el
+  listado del día esté completo.
 - Nunca repite descargas: un código ya guardado en cualquier día se omite; el avance se guarda en
   un checkpoint `fecha=YYYY-MM-DD.parcial.jsonl` y la corrida siguiente continúa desde ahí.
 - Cupo propio de CUPO_DIARIO requests por día calendario de Chile (bajo el límite de 10.000/día de la API),
@@ -35,7 +37,8 @@ from .client import MercadoPublicoClient
 LISTADOS_DIR = Path("data/raw/licitaciones")
 BITACORA = Path("data/logs/detalle_corridas.jsonl")
 DETALLE_DIR = Path("data/raw/detalle")
-MADUREZ_DIAS = 60
+MADUREZ_DIAS = 3
+ESTADOS_FINALES = {7, 8, 15, 16, 18, 19}  # desierta, adjudicada, revocada, suspendida (y sus códigos documentados)
 TOPE_REQUESTS = 9000
 MAX_INTENTOS_CODIGO = 2  # corridas distintas; luego el código se guarda como fallido y no se reintenta
 MAX_FALLOS_SEGUIDOS = 5
@@ -67,7 +70,8 @@ def dias_pendientes(hoy: date, listados_dir: Path, detalle_dir: Path, madurez: i
 def codigos_del_dia(d: date, listados_dir: Path) -> list[str]:
     with gzip.open(listados_dir / f"fecha={d.isoformat()}.json.gz", "rt", encoding="utf-8") as f:
         listado = json.load(f)
-    return list(dict.fromkeys(x["CodigoExterno"] for x in listado))  # únicos, en orden
+    resueltas = (x["CodigoExterno"] for x in listado if x.get("CodigoEstado") in ESTADOS_FINALES)
+    return list(dict.fromkeys(resueltas))  # únicos, en orden
 
 
 def codigos_guardados(detalle_dir: Path) -> set[str]:

@@ -27,7 +27,7 @@ def crear_listados(tmp_path, dias: dict[str, list[str]]):
     listados.mkdir()
     for d, codigos in dias.items():
         with gzip.open(listados / f"fecha={d}.json.gz", "wt", encoding="utf-8") as f:
-            json.dump([{"CodigoExterno": c} for c in codigos], f)
+            json.dump([c if isinstance(c, dict) else {"CodigoExterno": c, "CodigoEstado": 8} for c in codigos], f)
     return listados, tmp_path / "detalle"
 
 
@@ -39,6 +39,17 @@ def leer_final(detalle, d):
 def test_solo_dias_maduros(tmp_path):
     listados, detalle = crear_listados(tmp_path, {"2026-08-01": ["A"], "2026-08-20": ["B"], "2026-10-01": ["C"]})
     assert dias_pendientes(HOY, listados, detalle, madurez=60) == [date(2026, 8, 1)]
+
+
+def test_solo_descarga_licitaciones_resueltas(tmp_path):
+    abierta = {"CodigoExterno": "ABIERTA", "CodigoEstado": 6}
+    publicada = {"CodigoExterno": "PUB", "CodigoEstado": 5}
+    desierta = {"CodigoExterno": "DES", "CodigoEstado": 7}
+    listados, detalle = crear_listados(tmp_path, {"2026-07-01": [abierta, publicada, desierta, "ADJ"]})
+    c = ClienteFalso()
+    extraer_detalle(c, ahora=NOCHE, listados_dir=listados, detalle_dir=detalle)
+    assert c.pedidos == ["DES", "ADJ"]
+    assert [r["codigo"] for r in leer_final(detalle, "2026-07-01")] == ["DES", "ADJ"]
 
 
 def test_descarga_completa_y_no_repite(tmp_path):
