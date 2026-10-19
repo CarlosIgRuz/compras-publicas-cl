@@ -172,7 +172,9 @@ def test_cupo_diario_suma_lo_ya_usado(tmp_path):
     listados, detalle = crear_listados(tmp_path, {"2026-07-01": [f"X{i}" for i in range(50)]})
     c = ClienteFalso()
     usados = {NOCHE.date().isoformat(): m.CUPO_DIARIO - 10}
-    res = extraer_detalle(c, ahora=NOCHE, listados_dir=listados, detalle_dir=detalle, usados_por_dia=usados)
+    # reloj fijo a las 23:00: intenta esperar la medianoche (simulado) pero el día no cambia
+    res = extraer_detalle(c, ahora=NOCHE, listados_dir=listados, detalle_dir=detalle, usados_por_dia=usados,
+                          dormir=lambda s: None)
     assert res.motivo_fin == "cupo diario"
     assert c.requests_hechos <= 10
     assert res.requests_por_dia == {NOCHE.date().isoformat(): c.requests_hechos}
@@ -257,3 +259,35 @@ def test_disparo_poco_antes_de_las_22_espera(monkeypatch, tmp_path):
     assert m.main(["--solo-nocturno", "--max-minutos", "330"]) == 0
     assert esperas == [32 * 60]
     assert llamadas["max_minutos"] == 298  # la espera se descuenta
+
+
+def test_cupo_agotado_antes_de_medianoche_espera_el_dia_siguiente(tmp_path):
+    from datetime import timedelta
+    from compras.ingest import detalle as m
+
+    listados, detalle = crear_listados(tmp_path, {"2026-07-01": [f"X{i}" for i in range(5)]})
+    t = [datetime(2026, 10, 18, 22, 30, tzinfo=TZ_CHILE)]
+    esperas = []
+
+    def dormir(seg):
+        esperas.append(seg)
+        t[0] += timedelta(seconds=seg)
+
+    c = ClienteFalso()
+    usados = {"2026-10-18": m.CUPO_DIARIO}  # el cupo de hoy ya se gastó
+    res = extraer_detalle(c, ahora=t[0], reloj=lambda: t[0], dormir=dormir, max_minutos=330,
+                          listados_dir=listados, detalle_dir=detalle, usados_por_dia=usados)
+    assert len(esperas) == 1 and 89 * 60 < esperas[0] < 91 * 60  # esperó ~90 min
+    assert c.requests_hechos == 5 and res.motivo_fin == "sin pendientes"
+    assert res.requests_por_dia == {"2026-10-19": 5}
+
+
+def test_cupo_agotado_de_madrugada_no_espera(tmp_path):
+    from compras.ingest import detalle as m
+
+    listados, detalle = crear_listados(tmp_path, {"2026-07-01": ["A"]})
+    madrugada = datetime(2026, 10, 19, 3, 0, tzinfo=TZ_CHILE)
+    esperas = []
+    res = extraer_detalle(ClienteFalso(), ahora=madrugada, dormir=esperas.append,
+                          listados_dir=listados, detalle_dir=detalle, usados_por_dia={"2026-10-19": m.CUPO_DIARIO})
+    assert res.motivo_fin == "cupo diario" and esperas == []

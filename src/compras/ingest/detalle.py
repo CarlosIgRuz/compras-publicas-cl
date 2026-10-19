@@ -154,6 +154,7 @@ def extraer_detalle(
     detalle_dir: Path = DETALLE_DIR,
     usados_por_dia: dict[str, int] | None = None,
     reloj: Callable[[], datetime] | None = None,
+    dormir: Callable[[float], None] = time.sleep,
 ) -> Resumen:
     if reloj is None:
         reloj = (lambda: ahora) if ahora else (lambda: datetime.now(TZ_CHILE))
@@ -192,6 +193,15 @@ def extraer_detalle(
                     res.motivo_fin, cortado = "fin del horario nocturno", True
                     break
                 dia = momento.date().isoformat()
+                if usados.get(dia, 0) + res.requests_por_dia.get(dia, 0) + 3 > CUPO_DIARIO and nocturna and momento.hour >= 22:
+                    # el cupo es por día calendario: antes de medianoche conviene esperar el cupo del día siguiente
+                    medianoche = (momento + timedelta(days=1)).replace(hour=0, minute=0, second=5, microsecond=0)
+                    espera = (medianoche - momento).total_seconds()
+                    if (time.monotonic() - inicio + espera) / 60 < max_minutos:
+                        print(f"Cupo del {dia} agotado: esperando {espera / 60:.0f} min hasta medianoche")
+                        dormir(espera)
+                        momento = reloj().astimezone(TZ_CHILE)
+                        dia = momento.date().isoformat()
                 if usados.get(dia, 0) + res.requests_por_dia.get(dia, 0) + 3 > CUPO_DIARIO:
                     res.motivo_fin, cortado = "cupo diario", True
                     break
