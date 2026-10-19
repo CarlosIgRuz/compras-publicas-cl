@@ -10,3 +10,5 @@ dbt/logs/
 .ipynb_checkpoints/
 data/ingesta.log
 dbt/.user.yml
+data/mlflow.db
+models/

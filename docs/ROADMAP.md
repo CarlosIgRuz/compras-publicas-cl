@@ -4,9 +4,9 @@
 > Para retomar, basta decirle al agente: **"continúa con compras-publicas-cl"**.
 
 ## Siguiente tarea
-1. **Revisar `data/logs/detalle_corridas.jsonl`**: confirmar que los cron de las 23:17 y 02:43 se disparan, el gasto de requests por licitación y el respeto del cupo diario.
-2. **P1.6 (cierre)**: cuando el detalle cubra 2–3 meses, re-ejecutar `notebooks/01_eda.ipynb` y confirmar las variables candidatas (monto, organismo, región, plazos).
-3. **P1.7**: tabla de features *point-in-time* en dbt (historial del organismo calculado solo con licitaciones anteriores), baselines y LightGBM con split temporal.
+1. **Cuando el detalle llegue a ≥98% de las licitaciones resueltas** (~3–4 noches): `dbt build` + `python -m compras.models.train` y actualizar `reports/modelo_resultados.md` y el README con las métricas definitivas.
+2. **P1.8 — API de predicción con FastAPI + Docker** (se puede avanzar ya: no depende de las métricas finales).
+3. README en inglés con resumen en español (decisión de Carlos).
 
 ## Proyecto 1 · Pipeline + modelo en producción (~2 semanas)
 - [x] P1.1 Estructura del repo, cliente de la API, ingesta incremental, tests, CI
@@ -14,8 +14,8 @@
 - [x] P1.3 Descarga de detalle por licitación (con caché, checkpoint, tope de 9.000 requests/noche y madurez de 60 días) — backfill en curso vía `detalle.yml`
 - [x] P1.4 Carga a DuckDB + modelos dbt `staging`: `stg_listados`, `stg_detalle`, `stg_detalle_items` (16 tests dbt)
 - [x] P1.5 Marts dbt: `fct_licitaciones`, `fct_adjudicaciones`, `dim_organismos`, `dim_rubros` (34 checks dbt)
-- [~] P1.6 EDA en notebook + definición del objetivo — objetivo definido (`es_desierta` al publicar); falta re-ejecutar con más meses de detalle
-- [ ] P1.7 Baseline + LightGBM con MLflow (split temporal, varias métricas)
+- [x] P1.6 EDA en notebook + definición del objetivo (`es_desierta` al publicar) y cohorte sin sesgo de selección
+- [~] P1.7 Baseline + LightGBM con MLflow (split temporal, varias métricas) — pipeline listo; métricas preliminares hasta completar el detalle
 - [ ] P1.8 API de predicción con FastAPI + Docker
 - [ ] P1.9 Monitoreo de drift con Evidently + job programado diario
 - [ ] P1.10 Demo pública desplegada + README con resultados
@@ -46,3 +46,4 @@
 - **2026-10-17** — De 12 disparos cada 2 h, GitHub ejecutó solo 4 (13:37, 18:05, 21:28 y 03:55 Chile): descarta muchos, no solo los atrasa. Las de día terminaron en ~10 s, como estaba previsto. La de las 21:28 llegó 32 min antes de la ventana y terminó sin descargar; la de las 03:55 descargó 4.322 licitaciones hasta las 07:00 (0 fallidas, 1,01 req/licitación, 4.346 requests, bajo el cupo). Corrección: un disparo que llega hasta 150 min antes de las 22:00 espera la apertura (la espera se descuenta del tiempo de descarga) en vez de terminar. 19 tests. Acumulado: 17.589 licitaciones con detalle (44% de 40.191 maduras), publicadas sobre todo entre ene y may 2026; 20,6% desiertas.
 - **2026-10-18** — La noche del 17-oct ningún cron cayó dentro de la ventana (el último llegó a las 19:17, demasiado temprano para esperar), así que la descarga se lanzó a mano a las 00:57. Para no depender de los cron de GitHub se agregó una tarea programada externa (Claude) que cada noche a las 22:05 (Chile) lanza `detalle.yml` por `workflow_dispatch`, salvo que ya haya una corrida activa. Los cron de GitHub cada 2 h se mantienen como respaldo.
 - **2026-10-19** — La tarea de las 22:05 funcionó (disparó a las 22:06), pero se detuvo a los 26 min por "cupo diario": el cupo del 18-oct ya estaba gastado por la corrida manual de la madrugada. Retomó un cron de respaldo de GitHub a la 01:38. Es un problema estructural: en régimen normal la corrida de la noche anterior agota el cupo del día después de medianoche, así que la de las 22:05 siempre lo encontraría agotado. Corrección: si el cupo se agota entre las 22:00 y la medianoche, la corrida espera a las 00:00 (cupo nuevo) y sigue, siempre que le alcance el tiempo. 21 tests. Avance: 26.894 licitaciones con detalle (67% de 40.191).
+- **2026-10-19 (mañana)** — Carlos decidió: empezar P1.7 ya, README en inglés con resumen en español, terminar P1 antes de P2/P3. Hallazgo: la tasa de desiertas por mes de publicación subía de 12% a 33% en la muestra por sesgo de selección (listados desde el 1-abr y el último evento como fecha del listado; las desiertas se resuelven antes). Correcciones: cohorte = publicadas desde el 1-abr con ≥120 días de seguimiento (`en_cohorte`), y el detalle ahora baja solo licitaciones resueltas según su listado (madurez de 60 a 3 días; faltan ~30 mil, 3–4 noches). P1.7: `ml_licitaciones` (variables al publicar + historial point-in-time del organismo y del rubro, con test de no fuga) y `compras.models.train` (split temporal, baselines tasa global y tipo×rubro, regresión logística, LightGBM, IC bootstrap, MLflow local, reporte en `reports/`). **Resultados preliminares** (detalle al 46%, prueba sesgada a 30,5% de desiertas): PR-AUC 0,31 (global) → 0,36 (tipo×rubro) → 0,44 (logística) / 0,42 (LightGBM); ROC-AUC ~0,62. Variables principales: rubro, n° de ítems, historial del organismo, monto. 27 tests.

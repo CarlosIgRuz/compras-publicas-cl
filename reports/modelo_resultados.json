@@ -1,0 +1,141 @@
+{
+  "generado": "2026-10-19T06:52:43",
+  "n": {
+    "train": 9319,
+    "valid": 1997,
+    "test": 1997
+  },
+  "periodos": {
+    "train": [
+      "2026-04-01",
+      "2026-05-14"
+    ],
+    "valid": [
+      "2026-05-14",
+      "2026-05-28"
+    ],
+    "test": [
+      "2026-05-28",
+      "2026-06-19"
+    ]
+  },
+  "tasa_desierta": {
+    "train": 0.21568837858139286,
+    "valid": 0.24236354531797696,
+    "test": 0.3054581872809214
+  },
+  "modelos": {
+    "baseline_tasa_global": {
+      "pr_auc": 0.3054581872809214,
+      "roc_auc": 0.5,
+      "brier": 0.21938907588758647,
+      "recall_a_precision_50": 0.0
+    },
+    "baseline_tipo_x_rubro": {
+      "pr_auc": 0.3545974649100475,
+      "roc_auc": 0.5651524105570461,
+      "brier": 0.2172621025500677,
+      "recall_a_precision_50": 0.0,
+      "pr_auc_ic95": [
+        0.3250614107999912,
+        0.390725397996039
+      ],
+      "roc_auc_ic95": [
+        0.5352671272964082,
+        0.5934517212384827
+      ]
+    },
+    "regresion_logistica": {
+      "pr_auc": 0.4418979622857339,
+      "roc_auc": 0.6249406077511317,
+      "brier": 0.20552403589390286,
+      "recall_a_precision_50": 0.21475409836065573,
+      "pr_auc_ic95": [
+        0.4031224778429558,
+        0.4815998003596048
+      ],
+      "roc_auc_ic95": [
+        0.5977478479933477,
+        0.6519088796263646
+      ]
+    },
+    "lightgbm": {
+      "pr_auc": 0.4222726056893184,
+      "roc_auc": 0.6217523372770575,
+      "brier": 0.21716610739894268,
+      "recall_a_precision_50": 0.15737704918032788,
+      "pr_auc_ic95": [
+        0.38699350875151445,
+        0.4628229017899292
+      ],
+      "roc_auc_ic95": [
+        0.5962797696227484,
+        0.6487923902617424
+      ]
+    }
+  },
+  "lightgbm_iteraciones": 6,
+  "importancias_lightgbm": [
+    [
+      "rubro_principal",
+      0.2518
+    ],
+    [
+      "n_items",
+      0.161
+    ],
+    [
+      "org_tasa_desierta_previa",
+      0.1255
+    ],
+    [
+      "log_monto_estimado_clp",
+      0.1078
+    ],
+    [
+      "convocatoria",
+      0.1025
+    ],
+    [
+      "region",
+      0.0451
+    ],
+    [
+      "rubro_n_previas",
+      0.0433
+    ],
+    [
+      "rubro_tasa_desierta_previa",
+      0.0368
+    ],
+    [
+      "org_n_previas",
+      0.0312
+    ],
+    [
+      "hora_publicacion",
+      0.0291
+    ],
+    [
+      "dias_abierta",
+      0.026
+    ],
+    [
+      "tipo",
+      0.0189
+    ],
+    [
+      "etapas",
+      0.0156
+    ],
+    [
+      "dia_semana_publicacion",
+      0.0054
+    ],
+    [
+      "monto_visible",
+      0.0
+    ]
+  ],
+  "completitud_detalle": 0.4611425630468348
+}
