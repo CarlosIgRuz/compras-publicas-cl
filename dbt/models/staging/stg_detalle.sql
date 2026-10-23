@@ -1,3 +1,4 @@
+{{ config(materialized="table") }}
 -- Una fila por licitación con su detalle (data/raw/detalle), tipado.
 -- Se excluyen a propósito los datos personales de funcionarios (nombres, correos, teléfonos).
 -- Fuente: Dirección ChileCompra.

@@ -58,3 +58,10 @@ def test_baseline_tipo_rubro_suaviza_hacia_la_tasa_global():
     p = t.baseline_tipo_rubro(train, otro, m=2)
     assert p[0] == pytest.approx((2 + 2 * 1.0) / 4)  # grupo conocido
     assert p[1] == pytest.approx(1.0)                # grupo desconocido → tasa global
+
+
+def test_precision_top():
+    y = np.array([1, 0, 1, 0, 0, 0, 0, 0, 0, 0])
+    p = np.array([.9, .8, .7, .1, .1, .1, .1, .1, .1, .1])
+    assert t.precision_top(y, p, 0.2) == 0.5
+    assert t.precision_top(y, p, 0.3) == pytest.approx(2 / 3)

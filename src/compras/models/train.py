@@ -30,11 +30,13 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 OBJETIVO = "es_desierta"
 CATEGORICAS = ["tipo", "convocatoria", "rubro_principal", "moneda", "region"]
 NUMERICAS = [
-    "etapas", "dias_abierta", "dia_semana_publicacion", "hora_publicacion",
+    "etapas", "dia_semana_publicacion", "hora_publicacion",
     "n_items", "n_rubros", "monto_visible", "monto_desconocido", "log_monto_estimado_clp",
     "org_n_previas", "org_tasa_desierta_previa", "rubro_n_previas", "rubro_tasa_desierta_previa",
 ]
-# Excluidas a propósito: mes_publicacion (en un split temporal es un proxy del tiempo y no
+# Excluidas a propósito: dias_abierta (usa la fecha de cierre final; si el plazo se amplió después
+# de publicar sería información posterior, y solo aportaba +0,01 de PR-AUC, dentro del IC),
+# mes_publicacion (en un split temporal es un proxy del tiempo y no
 # generaliza), codigo_organismo (alta cardinalidad; su historial ya entra point-in-time).
 PRECISION_OBJETIVO = 0.5
 SEMILLA = 42
@@ -142,6 +144,12 @@ def recall_a_precision(y: np.ndarray, p: np.ndarray, precision_min: float = PREC
     return float(ok.max()) if len(ok) else 0.0
 
 
+def precision_top(y: np.ndarray, p: np.ndarray, frac: float) -> float:
+    """Tasa de desiertas entre el `frac` de licitaciones con mayor riesgo predicho."""
+    k = max(1, int(round(len(p) * frac)))
+    return float(np.asarray(y)[np.argsort(-np.asarray(p), kind="stable")[:k]].mean())
+
+
 def metricas(y: np.ndarray, p: np.ndarray) -> dict:
     y = np.asarray(y).astype(int)
     unica = len(np.unique(p)) == 1  # baseline constante: ROC/PR no informativos más allá del azar
@@ -150,6 +158,7 @@ def metricas(y: np.ndarray, p: np.ndarray) -> dict:
         "roc_auc": 0.5 if unica else float(roc_auc_score(y, p)),
         "brier": float(brier_score_loss(y, p)),
         f"recall_a_precision_{int(PRECISION_OBJETIVO * 100)}": 0.0 if unica else recall_a_precision(y, p),
+        "precision_top10": float(y.mean()) if unica else precision_top(y, p, 0.10),
     }
 
 
@@ -233,7 +242,7 @@ def reporte_md(res: dict) -> str:
         ic = m.get("pr_auc_ic95")
         ic_txt = f" [{ic[0]:.3f}–{ic[1]:.3f}]" if ic else ""
         clave_recall = [k for k in m if k.startswith("recall_a_precision")][0]
-        filas.append(f"| {nombre} | {m['pr_auc']:.3f}{ic_txt} | {m['roc_auc']:.3f} | {m['brier']:.4f} | {m[clave_recall]:.3f} |")
+        filas.append(f"| {nombre} | {m['pr_auc']:.3f}{ic_txt} | {m['roc_auc']:.3f} | {m['brier']:.4f} | {m[clave_recall]:.3f} | {m['precision_top10']:.1%} |")
     aviso = ""
     if res["completitud_detalle"] < 0.98:
         aviso = (f"\n> **Preliminar:** el detalle cubre el {res['completitud_detalle']:.0%} de las licitaciones resueltas; "
@@ -251,8 +260,8 @@ Generado: {res['generado']} · Cohorte: publicadas {res['periodos']['train'][0]}
 
 ## Métricas en prueba
 
-| Modelo | PR-AUC [IC 95%] | ROC-AUC | Brier | Recall a precisión {PRECISION_OBJETIVO:.0%} |
-|---|---|---|---|---|
+| Modelo | PR-AUC [IC 95%] | ROC-AUC | Brier | Recall a precisión {PRECISION_OBJETIVO:.0%} | % desiertas en el 10% de mayor riesgo |
+|---|---|---|---|---|---|
 {chr(10).join(filas)}
 
 ## Variables más importantes (LightGBM, ganancia)

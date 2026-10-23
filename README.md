@@ -20,17 +20,19 @@ About **1 in 5** tenders with an outcome ends void, a remarkably stable rate mon
 ![Monthly composition and % void](docs/img/eda_meses.png)
 ![% void by procedure type](docs/img/eda_tipos.png)
 
-## Preliminary results
-Temporal split by publication date; every feature is known at publication time, and the buyer's history is computed point-in-time (only outcomes resolved *before* publication, enforced by a test). Full report: [`reports/modelo_resultados.md`](reports/modelo_resultados.md).
+## Results
+Temporal split by publication date (train Apr 1 → Jun 1, validation → Jun 11, test Jun 11 → Jun 23, 2026; 21,856 tenders with an outcome). Every feature is known at publication time, and the buyer's history is computed point-in-time (only outcomes resolved *before* publication, enforced by a test). Full report: [`reports/modelo_resultados.md`](reports/modelo_resultados.md).
 
-| Model (test set) | PR-AUC [95% CI] | ROC-AUC | Brier |
-|---|---|---|---|
-| Baseline: global rate | 0.305 | 0.500 | 0.219 |
-| Baseline: historical rate by type × category | 0.355 [0.33–0.39] | 0.565 | 0.217 |
-| Logistic regression | 0.442 [0.40–0.48] | 0.625 | 0.206 |
-| LightGBM | 0.422 [0.39–0.46] | 0.622 | 0.217 |
+| Model (test set, 20.5% void) | PR-AUC [95% CI] | ROC-AUC | Brier | % void among the 10% highest-risk |
+|---|---|---|---|---|
+| Baseline: global rate | 0.205 | 0.500 | 0.163 | 20.5% |
+| Baseline: historical rate by type × category | 0.264 [0.24–0.29] | 0.589 | 0.160 | 29.9% |
+| Logistic regression | 0.317 [0.29–0.35] | 0.634 | 0.156 | 37.8% |
+| **LightGBM** | **0.317 [0.29–0.35]** | **0.643** | **0.157** | **39.6%** |
 
-> ⚠️ **Preliminary:** tender details are still being downloaded (46% coverage when trained), so the test set is skewed toward fast outcomes. Metrics will be updated once the nightly backfill completes. A shuffled-label check drops both models to ROC-AUC ≈ 0.50, as expected without leakage.
+**Reading:** flagging the riskiest 10% of new tenders finds void ones at ~2× the base rate, and both models beat a strong rule-based baseline. The signal is real but moderate — whether a tender ends void also depends on bids and evaluation that happen *after* publication. Top drivers: product category, number of line items, the buyer's past void rate and the estimated amount.
+
+**Leakage checks:** with shuffled labels both models drop to ROC-AUC ≈ 0.50. The planned closing date was removed as a feature: it comes from the final record (deadline extensions happen after publication) and added only +0.01 PR-AUC, within the confidence interval.
 
 ## Engineering highlights
 - **Nightly ingestion on GitHub Actions** that respects the API terms: a self-imposed daily quota of 9,000 requests tracked in a versioned run log, downloads only between 22:00 and 07:00 Chile time, adaptive back-off (~1.01 requests per tender), checkpoints and per-tender retries so one API error never stops a night. Because GitHub cron triggers proved unreliable (often hours late or dropped), a scheduled external dispatcher is the primary trigger and cron is the fallback.
@@ -80,7 +82,7 @@ Ecosistema de datos de punta a punta sobre las compras públicas de Chile, const
 
 - **Pregunta:** ¿quedará desierta esta licitación?, predicha al momento de publicarla. Cerca de 1 de cada 5 licitaciones con resultado queda desierta.
 - **Pipeline:** ingesta nocturna en GitHub Actions que respeta las condiciones de uso de la API, warehouse en DuckDB con dbt y un modelo con split temporal y variables sin fuga de información.
-- **Resultados preliminares:** la regresión logística y LightGBM superan a las dos referencias simples (PR-AUC 0,44 frente a 0,36), con métricas por actualizar al completar la descarga.
+- **Resultados:** LightGBM y la regresión logística superan a las dos referencias simples (PR-AUC 0,32 frente a 0,26 y 0,21). Entre el 10% de licitaciones de mayor riesgo, el 40% queda desierta: casi el doble de la tasa base.
 - La bitácora ([`docs/ROADMAP.md`](docs/ROADMAP.md)) y las decisiones están en español.
 
 *Fuente de los datos: Dirección ChileCompra.*

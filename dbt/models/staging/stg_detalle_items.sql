@@ -1,3 +1,4 @@
+{{ config(materialized="table") }}
 -- Una fila por línea de Items.Listado de cada licitación, con su adjudicación si existe.
 -- Un mismo ítem (correlativo) aparece una vez por proveedor cuando se adjudica a varios;
 -- por eso la clave es (codigo, posicion), la posición de la línea en la lista original.

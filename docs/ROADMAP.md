@@ -4,8 +4,7 @@
 > Para retomar, basta decirle al agente: **"continúa con compras-publicas-cl"**.
 
 ## Siguiente tarea
-1. **Cuando el detalle llegue a ≥98% de las licitaciones resueltas** (~3–4 noches): `dbt build` + `python -m compras.models.train` y actualizar `reports/modelo_resultados.md` y el README con las métricas definitivas.
-2. **P1.8 — API de predicción con FastAPI + Docker** (se puede avanzar ya: no depende de las métricas finales).
+**P1.8 — API de predicción con FastAPI + Docker**: endpoint que recibe una licitación recién publicada (o su código) y devuelve el riesgo de quedar desierta, cargando `models/lightgbm_desierta.txt`. El historial del organismo se calcula desde el warehouse.
 
 ## Proyecto 1 · Pipeline + modelo en producción (~2 semanas)
 - [x] P1.1 Estructura del repo, cliente de la API, ingesta incremental, tests, CI
@@ -14,7 +13,7 @@
 - [x] P1.4 Carga a DuckDB + modelos dbt `staging`: `stg_listados`, `stg_detalle`, `stg_detalle_items` (16 tests dbt)
 - [x] P1.5 Marts dbt: `fct_licitaciones`, `fct_adjudicaciones`, `dim_organismos`, `dim_rubros` (34 checks dbt)
 - [x] P1.6 EDA en notebook + definición del objetivo (`es_desierta` al publicar) y cohorte sin sesgo de selección
-- [~] P1.7 Baseline + LightGBM con MLflow (split temporal, varias métricas) — pipeline listo; métricas preliminares hasta completar el detalle
+- [x] P1.7 Baseline + LightGBM con MLflow (split temporal, varias métricas)
 - [ ] P1.8 API de predicción con FastAPI + Docker
 - [ ] P1.9 Monitoreo de drift con Evidently + job programado diario
 - [ ] P1.10 Demo pública desplegada + README con resultados
@@ -48,3 +47,4 @@
 - **2026-10-19 (mañana)** — Carlos decidió: empezar P1.7 ya, README en inglés con resumen en español, terminar P1 antes de P2/P3. Hallazgo: la tasa de desiertas por mes de publicación subía de 12% a 33% en la muestra por sesgo de selección (listados desde el 1-abr y el último evento como fecha del listado; las desiertas se resuelven antes). Correcciones: cohorte = publicadas desde el 1-abr con ≥120 días de seguimiento (`en_cohorte`), y el detalle ahora baja solo licitaciones resueltas según su listado (madurez de 60 a 3 días; faltan ~30 mil, 3–4 noches). P1.7: `ml_licitaciones` (variables al publicar + historial point-in-time del organismo y del rubro, con test de no fuga) y `compras.models.train` (split temporal, baselines tasa global y tipo×rubro, regresión logística, LightGBM, IC bootstrap, MLflow local, reporte en `reports/`). **Resultados preliminares** (detalle al 46%, prueba sesgada a 30,5% de desiertas): PR-AUC 0,31 (global) → 0,36 (tipo×rubro) → 0,44 (logística) / 0,42 (LightGBM); ROC-AUC ~0,62. Variables principales: rubro, n° de ítems, historial del organismo, monto. 27 tests.
 - **2026-10-19 (cierre)** — README reescrito en inglés con resumen en español: pregunta, resultados preliminares, decisiones de ingeniería y arquitectura. Chequeo de fuga con etiquetas barajadas: ROC-AUC 0,51/0,50. Anotada la limitación de `dias_abierta` (plazo final, no el original).
 - **2026-10-19 (07:30)** — Noche del 18 al 19: el cron de respaldo de la 01:38 descargó 7.354 licitaciones hasta las 07:00 (0 fallidas, 7.394 requests el 19-oct, bajo el cupo). Completitud del detalle: 58% de las licitaciones resueltas (antes 46%).
+- **2026-10-23** — Backfill completo: 99,2% de las licitaciones resueltas con detalle (48 MB); las corridas ya terminan en "sin pendientes". `stg_detalle` y `stg_detalle_items` pasan a tablas: como vistas, los tests releían los 48 MB por cada consulta y uno falló por memoria (el build completo ahora toma 23 s). **Métricas definitivas de P1.7** (prueba: 3.279 licitaciones publicadas entre el 11 y el 23 de junio, 20,5% desiertas, igual que en entrenamiento, así que el sesgo quedó corregido): PR-AUC 0,205 (global) → 0,264 (tipo×rubro) → 0,317 (logística y LightGBM); ROC-AUC 0,643 (LightGBM); 39,6% de desiertas en el 10% de mayor riesgo (≈2× la base). `dias_abierta` eliminada (solo aportaba +0,01 de PR-AUC). Etiquetas barajadas: ROC-AUC 0,48–0,50. Nueva métrica `precision_top10`. 28 tests.
