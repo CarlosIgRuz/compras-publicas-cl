@@ -47,7 +47,7 @@ def test_historial_point_in_time(tmp_path, monkeypatch):
     ])
     assert res.success
 
-    filas = {r[0]: r[1:] for r in duckdb.connect(str(db)).sql(
+    filas = {r[0]: r[1:] for r in duckdb.connect(str(db)).execute(
         "select codigo, org_n_previas, round(org_tasa_desierta_previa, 4), en_cohorte from ml_licitaciones"
     ).fetchall()}
     p0, m = 0.207, 10

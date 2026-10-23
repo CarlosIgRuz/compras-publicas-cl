@@ -53,7 +53,7 @@ def cargar(db: Path) -> pd.DataFrame:
     import duckdb
 
     con = duckdb.connect(str(db), read_only=True)
-    df = con.sql(
+    df = con.execute(
         f"select * from ml_licitaciones where en_cohorte and {OBJETIVO} is not null order by fecha_publicacion, codigo"
     ).df()
     con.close()
@@ -226,7 +226,7 @@ def completitud_detalle(db: Path) -> float:
     import duckdb
 
     con = duckdb.connect(str(db), read_only=True)
-    v = con.sql("""
+    v = con.execute("""
         select avg((d.codigo is not null)::int)
         from (select distinct codigo from stg_listados
               where estado in ('desierta','adjudicada','revocada','suspendida')) l

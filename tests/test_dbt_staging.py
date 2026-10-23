@@ -59,7 +59,7 @@ def test_stg_listados(tmp_path, monkeypatch):
     ])
     assert res.success
 
-    filas = duckdb.connect(str(db)).sql(
+    filas = duckdb.connect(str(db)).execute(
         "select codigo, estado, tipo, fecha_cierre from stg_listados order by codigo"
     ).fetchall()
     assert [(c, e, t) for c, e, t, _ in filas] == [
@@ -69,7 +69,7 @@ def test_stg_listados(tmp_path, monkeypatch):
     assert str(filas[0][3]).startswith("2026-07-01 15:04:09")
 
     con = duckdb.connect(str(db))
-    det = con.sql(
+    det = con.execute(
         "select codigo, estado, region, numero_oferentes, fecha_adjudicacion, monto_estimado "
         "from stg_detalle order by codigo"
     ).fetchall()
@@ -77,16 +77,16 @@ def test_stg_listados(tmp_path, monkeypatch):
         ("1-1-LE26", "adjudicada", "Región del Biobío", 3, None, None),  # 1900 → NULL, región sin espacio
         ("2-5-LP26", "revocada", None, None, None, None),
     ]
-    columnas = [c[0] for c in con.sql("describe stg_detalle").fetchall()]
+    columnas = [c[0] for c in con.execute("describe stg_detalle").fetchall()]
     assert not any("usuario" in c for c in columnas)  # sin datos personales de funcionarios
 
-    items = con.sql(
+    items = con.execute(
         "select posicion, correlativo, rubro, rut_proveedor, monto_adjudicado from stg_detalle_items order by posicion"
     ).fetchall()
     assert items == [(1, 1, "Salud", "76.1-1", 500.0), (2, 1, "Salud", "77.2-2", 700.0)]
 
     # marts
-    fct = con.sql(
+    fct = con.execute(
         "select codigo, tiene_resultado, es_desierta, rubro_principal, n_items, n_proveedores_adjudicados, "
         "monto_adjudicado_clp, dias_abierta from fct_licitaciones order by codigo"
     ).fetchall()
@@ -94,6 +94,6 @@ def test_stg_listados(tmp_path, monkeypatch):
         ("1-1-LE26", True, False, "Salud", 1, 2, 1200.0, 19),
         ("2-5-LP26", False, None, None, 0, 0, None, None),  # revocada: sin resultado → objetivo NULL
     ]
-    assert con.sql("select count(*) from fct_adjudicaciones").fetchone() == (2,)
-    org = con.sql("select codigo_organismo, tasa_desierta from dim_organismos order by 1").fetchall()
+    assert con.execute("select count(*) from fct_adjudicaciones").fetchone() == (2,)
+    org = con.execute("select codigo_organismo, tasa_desierta from dim_organismos order by 1").fetchall()
     assert org == [("1", None), ("7479", 0.0)]
