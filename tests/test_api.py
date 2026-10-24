@@ -73,3 +73,25 @@ def test_variables_de_la_api_igual_que_en_entrenamiento(artefactos):
         entreno[c] = t.a_categoria(entreno[c], m.meta["categorias"][c])
     pd.testing.assert_frame_equal(api.reset_index(drop=True), entreno[api.columns].reset_index(drop=True),
                                   check_dtype=False)
+
+
+def test_pagina_demo_y_organismos(cliente):
+    r = cliente.get("/")
+    assert r.status_code == 200 and "text/html" in r.headers["content-type"]
+    assert "Dirección ChileCompra" in r.text
+    orgs = cliente.get("/organismos").json()
+    assert orgs == [{"codigo": "ORG1", "nombre": "Organismo Uno", "licitaciones": 40}]
+
+
+def test_carpeta_del_space_tiene_lo_necesario(tmp_path):
+    from pathlib import Path
+
+    from compras.deploy.space import preparar
+
+    raiz = Path(__file__).resolve().parents[1]
+    c = preparar(tmp_path / "space", raiz)
+    for f in ["Dockerfile", "README.md", "requirements-api.txt", "src/compras/api/app.py",
+              "src/compras/api/static/index.html", "artifacts/modelo/lightgbm.txt", "artifacts/modelo/metadata.json"]:
+        assert (c / f).exists(), f
+    assert "sdk: docker" in (c / "README.md").read_text() and "app_port: 8000" in (c / "README.md").read_text()
+    assert not list(c.rglob("__pycache__"))

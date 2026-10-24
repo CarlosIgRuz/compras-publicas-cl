@@ -36,7 +36,9 @@ Temporal split by publication date (train Apr 1 → Jun 1, validation → Jun 11
 
 **Leakage checks:** with shuffled labels both models drop to ROC-AUC ≈ 0.50. The planned closing date was removed as a feature: it comes from the final record (deadline extensions happen after publication) and added only +0.01 PR-AUC, within the confidence interval.
 
-## Prediction API
+## Prediction API and demo
+A small demo page (served by the API at `/`) lets anyone fill in a tender and see the risk, its level and the main drivers. Public demo on Hugging Face Spaces: *coming soon*.
+
 FastAPI service that scores a tender at publication time and explains the top three drivers (LightGBM SHAP contributions). The buyer's history is looked up from artifacts exported at training time, and a test guarantees the API builds features exactly like the training pipeline (no training/serving skew). The Docker image is built and smoke-tested on every change by [a GitHub Actions workflow](.github/workflows/docker.yml).
 
 ```bash

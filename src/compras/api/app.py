@@ -22,7 +22,7 @@ import lightgbm as lgb
 import numpy as np
 import pandas as pd
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 TZ_CHILE = ZoneInfo("America/Santiago")
@@ -146,9 +146,13 @@ app = FastAPI(
 )
 
 
+ESTATICOS = Path(__file__).parent / "static"
+
+
 @app.get("/", include_in_schema=False)
 def raiz():
-    return RedirectResponse("/docs")
+    """Página de demo: formulario para probar el modelo (la API está documentada en /docs)."""
+    return FileResponse(ESTATICOS / "index.html")
 
 
 @app.get("/health")
@@ -167,6 +171,17 @@ def info_modelo():
 def opciones():
     """Valores conocidos por el modelo para las variables categóricas (útil para formularios)."""
     return modelo().meta["categorias"]
+
+
+@app.get("/organismos")
+def organismos(min_licitaciones: int = 5):
+    """Organismos con historial conocido (para buscar por nombre en el formulario)."""
+    h = modelo().hist_org
+    return sorted(
+        ({"codigo": c, "nombre": v["nombre"], "licitaciones": v["n"]} for c, v in h.items()
+         if v["n"] >= min_licitaciones and v.get("nombre")),
+        key=lambda o: o["nombre"],
+    )
 
 
 @app.post("/predecir", response_model=Prediccion)

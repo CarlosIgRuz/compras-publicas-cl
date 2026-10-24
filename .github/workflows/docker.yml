@@ -19,6 +19,8 @@ jobs:
           docker run -d --name api -p 8000:8000 compras-api:ci
           for i in $(seq 1 30); do curl -sf localhost:8000/health && break; sleep 2; done
           curl -sf localhost:8000/health
+          curl -sf localhost:8000/ | grep -q "Dirección ChileCompra"   # página de demo
+          curl -sf localhost:8000/organismos | python3 -c "import json,sys;assert len(json.load(sys.stdin))>100"
           curl -sf -X POST localhost:8000/predecir -H 'Content-Type: application/json' \
             -d '{"tipo":"LE","rubro_principal":"Servicios de construcción y mantenimiento","n_items":6,"monto_estimado_clp":40000000}' \
             | tee respuesta.json

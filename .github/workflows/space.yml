@@ -1,0 +1,24 @@
+name: Publicar demo en Hugging Face
+# Sube la API y la página de demo a un Space de Hugging Face cuando cambia el modelo o la API.
+# Requiere el secreto HF_TOKEN (token de Hugging Face con permiso de escritura). Sin él, no hace nada.
+on:
+  push:
+    branches: [main]
+    paths: ["Dockerfile", "requirements-api.txt", "src/compras/api/**", "artifacts/modelo/**", "space/**", "src/compras/deploy/**"]
+  workflow_dispatch:
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install huggingface_hub
+      - name: Publicar Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_SPACE: ${{ vars.HF_SPACE }}
+          PYTHONPATH: src
+        run: python -m compras.deploy.space
