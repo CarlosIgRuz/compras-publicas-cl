@@ -86,7 +86,8 @@ def desempeno(pred: pd.DataFrame, resultados: pd.DataFrame, hoy: date) -> dict:
     if pred.empty:
         return {"predicciones": 0, "resueltas": 0, "definitivas": {"n": 0}, "provisionales": {"n": 0}}
     unido = pred.merge(resultados[["codigo", "es_desierta"]], on="codigo", how="inner")
-    edad = (pd.Timestamp(hoy) - pd.to_datetime(unido["fecha_publicacion"]).dt.tz_localize(None)).dt.days
+    # las fechas vienen con y sin milisegundos: ISO8601 acepta ambas
+    edad = (pd.Timestamp(hoy) - pd.to_datetime(unido["fecha_publicacion"], format="ISO8601").dt.tz_localize(None)).dt.days
     salida = {"predicciones": int(len(pred)), "resueltas": int(len(unido))}
     for nombre, grupo in (("definitivas", unido[edad >= HORIZONTE_DIAS]), ("provisionales", unido[edad < HORIZONTE_DIAS])):
         y, p = grupo["es_desierta"].astype(int).to_numpy(), grupo["probabilidad"].to_numpy()
@@ -187,7 +188,7 @@ def main(argv: list[str] | None = None) -> int:
     if len(act):
         hasta = pd.to_datetime(act["fecha_publicacion"]).max()
         act = act[pd.to_datetime(act["fecha_publicacion"]) > hasta - pd.Timedelta(days=VENTANA_DIAS)]
-    pred = pd.read_json(PREDICCIONES, lines=True, dtype={"codigo": str}) if PREDICCIONES.exists() else pd.DataFrame(
+    pred = pd.read_json(PREDICCIONES, lines=True, dtype={"codigo": str}, convert_dates=False) if PREDICCIONES.exists() else pd.DataFrame(
         columns=["codigo", "fecha_publicacion", "probabilidad", "nivel"])
     pred_ventana = pred[pred["codigo"].isin(act["codigo"])] if len(pred) else pred
 

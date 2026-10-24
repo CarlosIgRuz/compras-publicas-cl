@@ -30,7 +30,7 @@ def test_psi_estable_y_con_cambio():
 
 def test_desempeno_separa_definitivas_de_provisionales():
     hoy = date(2026, 12, 1)
-    vieja, nueva = "2026-07-01 10:00:00", "2026-11-20 10:00:00"  # 153 y 11 días
+    vieja, nueva = "2026-07-01 10:00:00", "2026-11-20 10:00:00.390000"  # 153 y 11 días; con y sin milisegundos
     pred = pd.DataFrame({"codigo": ["A", "B", "C", "D"], "fecha_publicacion": [vieja, vieja, nueva, nueva],
                          "probabilidad": [0.8, 0.1, 0.5, 0.5]})
     resultados = pd.DataFrame({"codigo": ["A", "B", "C"], "es_desierta": [True, False, True]})  # D sigue abierta
