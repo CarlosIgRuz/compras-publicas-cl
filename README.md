@@ -45,8 +45,10 @@ curl -X POST localhost:8000/predecir -H 'Content-Type: application/json' \
   -d '{"tipo":"LE","rubro_principal":"Servicios de construcción y mantenimiento","n_items":6,"monto_estimado_clp":40000000}'
 ```
 ```json
-{"probabilidad_desierta": 0.29, "nivel": "medio", "tasa_base": 0.205,
- "factores": [{"variable": "rubro", "efecto": "sube el riesgo", "contribucion": 0.21}, "..."],
+{"probabilidad_desierta": 0.159, "nivel": "bajo", "tasa_base": 0.205,
+ "factores": [{"variable": "rubro", "efecto": "sube el riesgo", "contribucion": 0.241},
+              {"variable": "n° de ítems", "efecto": "baja el riesgo", "contribucion": -0.209},
+              {"variable": "historial de desiertas del organismo", "efecto": "baja el riesgo", "contribucion": -0.063}],
  "fuente": "Dirección ChileCompra"}
 ```
 
