@@ -1,3 +1,4 @@
+import pytest
 import gzip
 import json
 from datetime import date, datetime
@@ -259,8 +260,8 @@ def test_disparo_poco_antes_de_las_22_espera(monkeypatch, tmp_path):
         respuestas, pausa_s = {}, 1.0
 
     monkeypatch.setattr(m, "MercadoPublicoClient", lambda **kw: ClienteMudo())
-    monkeypatch.setattr(m, "usos_previos", lambda: {})
-    monkeypatch.setattr(m, "registrar_corrida", lambda res, c: None)
+    monkeypatch.setattr(m, "usos_previos", lambda *a, **kw: {})
+    monkeypatch.setattr(m, "registrar_corrida", lambda *a, **kw: None)
 
     def falso_extraer(client, **kw):
         llamadas.update(kw)
@@ -269,7 +270,7 @@ def test_disparo_poco_antes_de_las_22_espera(monkeypatch, tmp_path):
     monkeypatch.setattr(m, "extraer_detalle", falso_extraer)
     assert m.main(["--solo-nocturno", "--max-minutos", "330"]) == 0
     assert esperas == [32 * 60]
-    assert llamadas["max_minutos"] == 298  # la espera se descuenta
+    assert llamadas["max_minutos"] == pytest.approx(298, abs=0.1)  # la espera se descuenta
 
 
 def test_cupo_agotado_antes_de_medianoche_espera_el_dia_siguiente(tmp_path):
@@ -302,3 +303,38 @@ def test_cupo_agotado_de_madrugada_no_espera(tmp_path):
     res = extraer_detalle(ClienteFalso(), ahora=madrugada, dormir=esperas.append,
                           listados_dir=listados, detalle_dir=detalle, usados_por_dia={"2026-10-19": m.CUPO_DIARIO})
     assert res.motivo_fin == "cupo diario" and esperas == []
+
+
+def test_modo_publicadas_solo_baja_estado_publicada_desde_la_fecha(tmp_path):
+    from compras.ingest import detalle as m
+
+    pub_vieja = {"CodigoExterno": "VIEJA", "CodigoEstado": 5}
+    pub_nueva = {"CodigoExterno": "NUEVA", "CodigoEstado": 5}
+    listados, _ = crear_listados(tmp_path, {"2026-09-20": [pub_vieja, "ADJ1"], "2026-10-12": [pub_nueva, "ADJ2"]})
+    destino = tmp_path / "publicacion"
+    c = ClienteFalso()
+    extraer_detalle(c, ahora=NOCHE, listados_dir=listados, detalle_dir=destino,
+                    estados=m.ESTADOS_PUBLICADA, desde=date(2026, 10, 1), madurez=1)
+    assert c.pedidos == ["NUEVA"]
+    assert [r["codigo"] for r in leer_final(destino, "2026-10-12")] == ["NUEVA"]
+
+
+def test_main_corre_ambos_modos_y_comparte_bitacora(monkeypatch, tmp_path):
+    from compras.ingest import detalle as m
+
+    llamadas = []
+
+    def falso(client, **kw):
+        llamadas.append(kw["detalle_dir"].name)
+        return m.Resumen(descargados=1, requests=1, requests_por_dia={"2026-10-24": 1})
+
+    class ClienteMudo:
+        respuestas, pausa_s = {}, 1.0
+
+    monkeypatch.setattr(m, "extraer_detalle", falso)
+    monkeypatch.setattr(m, "MercadoPublicoClient", lambda **kw: ClienteMudo())
+    monkeypatch.setattr(m, "BITACORA", tmp_path / "b.jsonl")
+    assert m.main([]) == 0
+    assert llamadas == ["detalle_publicacion", "detalle"]
+    modos = [json.loads(x)["modo"] for x in (tmp_path / "b.jsonl").read_text().splitlines()]
+    assert modos == ["publicadas", "resueltas"]

@@ -37,8 +37,18 @@ from .client import MercadoPublicoClient
 LISTADOS_DIR = Path("data/raw/licitaciones")
 BITACORA = Path("data/logs/detalle_corridas.jsonl")
 DETALLE_DIR = Path("data/raw/detalle")
+PUBLICACION_DIR = Path("data/raw/detalle_publicacion")
 MADUREZ_DIAS = 3
 ESTADOS_FINALES = {7, 8, 15, 16, 18, 19}  # desierta, adjudicada, revocada, suspendida (y sus códigos documentados)
+ESTADOS_PUBLICADA = {5}
+# Modos de descarga (ver DECISIONS.md):
+# - "resueltas": detalle final de licitaciones ya resueltas → entrenamiento y evaluación.
+# - "publicadas": detalle al publicar de las licitaciones nuevas → puntuación diaria y monitoreo.
+#   Solo desde que empezó el monitoreo (no se reconstruye el pasado) y con 1 día de madurez.
+MODOS = {
+    "resueltas": {"estados": ESTADOS_FINALES, "dir": DETALLE_DIR, "madurez": MADUREZ_DIAS, "desde": None},
+    "publicadas": {"estados": ESTADOS_PUBLICADA, "dir": PUBLICACION_DIR, "madurez": 1, "desde": date(2026, 10, 1)},
+}
 TOPE_REQUESTS = 9000
 MAX_INTENTOS_CODIGO = 2  # corridas distintas; luego el código se guarda como fallido y no se reintenta
 MAX_FALLOS_SEGUIDOS = 5
@@ -60,18 +70,20 @@ def ruta_parcial(d: date, detalle_dir: Path) -> Path:
     return detalle_dir / f"fecha={d.isoformat()}.parcial.jsonl"
 
 
-def dias_pendientes(hoy: date, listados_dir: Path, detalle_dir: Path, madurez: int = MADUREZ_DIAS) -> list[date]:
+def dias_pendientes(hoy: date, listados_dir: Path, detalle_dir: Path, madurez: int = MADUREZ_DIAS,
+                    desde: date | None = None) -> list[date]:
     """Días con listado, suficientemente antiguos y sin archivo final de detalle (más antiguos primero)."""
     limite = hoy - timedelta(days=madurez)
     dias = (fecha_de_archivo(p) for p in listados_dir.glob("fecha=*.json.gz"))
-    return sorted(d for d in dias if d <= limite and not ruta_final(d, detalle_dir).exists())
+    return sorted(d for d in dias if d <= limite and (desde is None or d >= desde)
+                  and not ruta_final(d, detalle_dir).exists())
 
 
-def codigos_del_dia(d: date, listados_dir: Path) -> list[str]:
+def codigos_del_dia(d: date, listados_dir: Path, estados: set[int] = ESTADOS_FINALES) -> list[str]:
     with gzip.open(listados_dir / f"fecha={d.isoformat()}.json.gz", "rt", encoding="utf-8") as f:
         listado = json.load(f)
-    resueltas = (x["CodigoExterno"] for x in listado if x.get("CodigoEstado") in ESTADOS_FINALES)
-    return list(dict.fromkeys(resueltas))  # únicos, en orden
+    elegidas = (x["CodigoExterno"] for x in listado if x.get("CodigoEstado") in estados)
+    return list(dict.fromkeys(elegidas))  # únicos, en orden
 
 
 def codigos_guardados(detalle_dir: Path) -> set[str]:
@@ -156,6 +168,8 @@ def extraer_detalle(
     madurez: int = MADUREZ_DIAS,
     listados_dir: Path = LISTADOS_DIR,
     detalle_dir: Path = DETALLE_DIR,
+    estados: set[int] = ESTADOS_FINALES,
+    desde: date | None = None,
     usados_por_dia: dict[str, int] | None = None,
     reloj: Callable[[], datetime] | None = None,
     dormir: Callable[[float], None] = time.sleep,
@@ -175,9 +189,9 @@ def extraer_detalle(
     res = Resumen()
     guardados = codigos_guardados(detalle_dir)
 
-    for d in dias_pendientes(hoy, listados_dir, detalle_dir, madurez):
+    for d in dias_pendientes(hoy, listados_dir, detalle_dir, madurez, desde):
         parcial = ruta_parcial(d, detalle_dir)
-        codigos = [c for c in codigos_del_dia(d, listados_dir) if c not in guardados]
+        codigos = [c for c in codigos_del_dia(d, listados_dir, estados) if c not in guardados]
         hechos = codigos_resueltos(leer_parcial(parcial))
         faltan = [c for c in codigos if c not in hechos]
 
@@ -247,11 +261,13 @@ def extraer_detalle(
     return res
 
 
-def registrar_corrida(res: Resumen, client: MercadoPublicoClient, bitacora: Path = BITACORA) -> dict:
+def registrar_corrida(res: Resumen, client: MercadoPublicoClient, bitacora: Path = BITACORA,
+                     modo: str = "resueltas") -> dict:
     """Agrega una línea con el resumen de la corrida (sin secretos) a la bitácora versionada.
     Permite revisar el uso del cupo y los rechazos de la API sin acceso a los logs de Actions."""
     fila = {
         "fin": datetime.now(TZ_CHILE).isoformat(timespec="seconds"),
+        "modo": modo,
         "requests": res.requests,
         "descargados": res.descargados,
         "requests_por_licitacion": round(res.requests / res.descargados, 2) if res.descargados else None,
@@ -273,7 +289,8 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("--tope", type=int, default=TOPE_REQUESTS, help="máximo de requests en esta corrida")
     p.add_argument("--max-minutos", type=float, default=240)
-    p.add_argument("--madurez", type=int, default=MADUREZ_DIAS, help="días mínimos desde la publicación")
+    p.add_argument("--madurez", type=int, default=None, help="días mínimos del listado (por defecto, según el modo)")
+    p.add_argument("--modo", choices=["todo", *MODOS], default="todo")
     p.add_argument("--pausa", type=float, default=1.0, help="segundos base entre requests")
     p.add_argument("--solo-nocturno", action="store_true",
                    help="fuera de 22:00–07:00 (Chile) termina sin consultar la API (para disparos programados)")
@@ -290,19 +307,31 @@ def main(argv: list[str] | None = None) -> int:
             time.sleep(espera * 60)
             a.max_minutos = max(0.0, a.max_minutos - espera)
     client = MercadoPublicoClient(pausa_s=a.pausa)
-    usados = usos_previos()
-    print(f"Requests ya usados por día (bitácora): {usados}")
-    res = extraer_detalle(client, tope=a.tope, max_minutos=a.max_minutos, madurez=a.madurez, usados_por_dia=usados)
+    inicio = time.monotonic()
+    error = False
+    # primero las recién publicadas (pocas y sensibles al tiempo), después las resueltas
+    for modo in (["publicadas", "resueltas"] if a.modo == "todo" else [a.modo]):
+        cfg = MODOS[modo]
+        usados = usos_previos(BITACORA)  # se relee: incluye lo que gastó el modo anterior
+        restante = a.max_minutos - (time.monotonic() - inicio) / 60
+        if restante <= 1:
+            break
+        print(f"[{modo}] requests ya usados por día (bitácora): {usados}")
+        res = extraer_detalle(
+            client, tope=a.tope, max_minutos=restante,
+            madurez=a.madurez if a.madurez is not None else cfg["madurez"],
+            detalle_dir=cfg["dir"], estados=cfg["estados"], desde=cfg["desde"], usados_por_dia=usados,
+        )
+        registrar_corrida(res, client, bitacora=BITACORA, modo=modo)
+        print(f"[{modo}] días completos: {len(res.dias_completos)} · detalles nuevos: {res.descargados} · "
+              f"requests: {res.requests} · fin: {res.motivo_fin}")
+        if res.error:
+            print(f"ERROR [{modo}]: {res.error}", file=sys.stderr)
+            error = True
+        if res.motivo_fin in ("cupo diario", "fin del horario nocturno", "API caída"):
+            break
     print(f"Respuestas HTTP: {dict(client.respuestas)} · pausa final: {client.pausa_s:.2f}s")
-    registrar_corrida(res, client)
-    print(
-        f"Días completos: {len(res.dias_completos)} · detalles nuevos: {res.descargados} · "
-        f"requests: {res.requests} · fin: {res.motivo_fin}"
-    )
-    if res.error:
-        print(f"ERROR: {res.error}", file=sys.stderr)
-        return 1
-    return 0
+    return 1 if error else 0
 
 
 if __name__ == "__main__":
