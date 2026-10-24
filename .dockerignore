@@ -1,0 +1,8 @@
+data/
+dbt/
+notebooks/
+tests/
+reports/
+.git/
+.venv/
+**/__pycache__/

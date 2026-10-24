@@ -1,0 +1,28 @@
+name: Imagen Docker de la API
+# Construye la imagen de la API y la prueba de punta a punta: levanta el contenedor y
+# consulta /health y /predecir con el modelo exportado.
+on:
+  push:
+    paths: ["Dockerfile", "requirements-api.txt", "src/compras/api/**", "artifacts/modelo/**", ".github/workflows/docker.yml"]
+  workflow_dispatch:
+
+jobs:
+  construir-y-probar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construir imagen
+        run: docker build -t compras-api:ci .
+      - name: Prueba de humo
+        run: |
+          docker run -d --name api -p 8000:8000 compras-api:ci
+          for i in $(seq 1 30); do curl -sf localhost:8000/health && break; sleep 2; done
+          curl -sf localhost:8000/health
+          curl -sf -X POST localhost:8000/predecir -H 'Content-Type: application/json' \
+            -d '{"tipo":"LE","rubro_principal":"Servicios de construcción y mantenimiento","n_items":6,"monto_estimado_clp":40000000}' \
+            | tee respuesta.json
+          python3 -c "import json;r=json.load(open('respuesta.json'));assert 0<r['probabilidad_desierta']<1 and r['nivel'] in ('alto','medio','bajo'), r"
+      - name: Logs del contenedor (si falla)
+        if: failure()
+        run: docker logs api

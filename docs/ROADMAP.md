@@ -4,7 +4,8 @@
 > Para retomar, basta decirle al agente: **"continúa con compras-publicas-cl"**.
 
 ## Siguiente tarea
-**P1.8 — API de predicción con FastAPI + Docker**: endpoint que recibe una licitación recién publicada (o su código) y devuelve el riesgo de quedar desierta, cargando `models/lightgbm_desierta.txt`. El historial del organismo se calcula desde el warehouse.
+1. **Confirmar que el workflow `docker.yml` pasa** (construye la imagen y prueba /health y /predecir).
+2. **P1.9 — Monitoreo de drift con Evidently + job programado**: comparar las licitaciones publicadas cada semana con la cohorte de entrenamiento (variables y tasa de desiertas observada) y publicar un reporte; criterio explícito para reentrenar.
 
 ## Proyecto 1 · Pipeline + modelo en producción (~2 semanas)
 - [x] P1.1 Estructura del repo, cliente de la API, ingesta incremental, tests, CI
@@ -14,7 +15,7 @@
 - [x] P1.5 Marts dbt: `fct_licitaciones`, `fct_adjudicaciones`, `dim_organismos`, `dim_rubros` (34 checks dbt)
 - [x] P1.6 EDA en notebook + definición del objetivo (`es_desierta` al publicar) y cohorte sin sesgo de selección
 - [x] P1.7 Baseline + LightGBM con MLflow (split temporal, varias métricas)
-- [ ] P1.8 API de predicción con FastAPI + Docker
+- [x] P1.8 API de predicción con FastAPI + Docker
 - [ ] P1.9 Monitoreo de drift con Evidently + job programado diario
 - [ ] P1.10 Demo pública desplegada + README con resultados
 
@@ -49,3 +50,4 @@
 - **2026-10-19 (07:30)** — Noche del 18 al 19: el cron de respaldo de la 01:38 descargó 7.354 licitaciones hasta las 07:00 (0 fallidas, 7.394 requests el 19-oct, bajo el cupo). Completitud del detalle: 58% de las licitaciones resueltas (antes 46%).
 - **2026-10-23** — Backfill completo: 99,2% de las licitaciones resueltas con detalle (48 MB); las corridas ya terminan en "sin pendientes". `stg_detalle` y `stg_detalle_items` pasan a tablas: como vistas, los tests releían los 48 MB por cada consulta y uno falló por memoria (el build completo ahora toma 23 s). **Métricas definitivas de P1.7** (prueba: 3.279 licitaciones publicadas entre el 11 y el 23 de junio, 20,5% desiertas, igual que en entrenamiento, así que el sesgo quedó corregido): PR-AUC 0,205 (global) → 0,264 (tipo×rubro) → 0,317 (logística y LightGBM); ROC-AUC 0,643 (LightGBM); 39,6% de desiertas en el 10% de mayor riesgo (≈2× la base). `dias_abierta` eliminada (solo aportaba +0,01 de PR-AUC). Etiquetas barajadas: ROC-AUC 0,48–0,50. Nueva métrica `precision_top10`. 28 tests.
 - **2026-10-23 (CI)** — CI falló al instalar DuckDB 2.0 (recién publicado), que eliminó `fetchone()` en las relaciones. Corrección: consultas con `con.execute(...)`, compatible con 1.x y 2.x. Verificado en un entorno limpio con Python 3.11 + DuckDB 2.0 (28 tests) y en local con DuckDB 1.5.
+- **2026-10-24** — P1.8: API FastAPI (`src/compras/api/app.py`) con `/health`, `/modelo`, `/opciones` y `POST /predecir` (probabilidad, nivel alto/medio/bajo, 3 factores principales vía SHAP de LightGBM, historial del organismo). El entrenamiento ahora exporta `artifacts/modelo/` (LightGBM reentrenado con toda la cohorte, metadata con categorías y umbrales, historial por organismo y rubro; ~290 KB). Test de consistencia entrenamiento/servicio: la API construye exactamente las mismas variables que `train.preparar`. Early stopping cambiado a log-loss: mismo ranking (PR-AUC 0,316, 39,6% en el top 10%) y probabilidades bien calibradas (antes 0,14 predicho → 0,10 observado; ahora 0,09 → 0,09, 0,34 → 0,32), con 113 árboles en vez de 32. Dockerfile liviano (`requirements-api.txt`, usuario sin privilegios, healthcheck). Docker Hub no es accesible desde el entorno del agente, así que la imagen se construye y prueba en GitHub Actions (`docker.yml`). 33 tests.

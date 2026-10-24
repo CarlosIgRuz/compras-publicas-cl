@@ -123,7 +123,9 @@ def entrenar_lightgbm(train: pd.DataFrame, valid: pd.DataFrame):
     )
     modelo.fit(
         Xtr, train[OBJETIVO].astype(int), eval_set=[(Xva, valid[OBJETIVO].astype(int))],
-        eval_metric="average_precision", callbacks=[lgb.early_stopping(100, verbose=False)],
+        # log-loss para el early stopping: mismo ranking que con PR-AUC pero probabilidades mejor
+        # calibradas (la API muestra la probabilidad al usuario). Ver DECISIONS.md.
+        eval_metric="binary_logloss", callbacks=[lgb.early_stopping(100, verbose=False, first_metric_only=True)],
     )
     modelo.categorias_ = categorias
     return modelo
@@ -218,6 +220,7 @@ def evaluar(df: pd.DataFrame) -> dict:
         "lightgbm_iteraciones": int(lgbm.best_iteration_ or lgbm.n_estimators),
         "importancias_lightgbm": importancias(lgbm),
         "_modelo_lightgbm": lgbm,
+        "_pred_test_lightgbm": predicciones["lightgbm"],
     }
 
 
@@ -295,18 +298,23 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("--db", type=Path, default=Path("data/warehouse.duckdb"))
     p.add_argument("--salida", type=Path, default=Path("reports"))
+    p.add_argument("--artefactos", type=Path, default=Path("artifacts/modelo"),
+                   help="carpeta del modelo de servicio que usa la API")
     a = p.parse_args(argv)
 
     df = cargar(a.db)
     res = evaluar(df)
     res["completitud_detalle"] = completitud_detalle(a.db)
     modelo = res.pop("_modelo_lightgbm")
+    pred_test = res.pop("_pred_test_lightgbm")
 
     a.salida.mkdir(parents=True, exist_ok=True)
     (a.salida / "modelo_resultados.json").write_text(json.dumps(res, indent=2, ensure_ascii=False), encoding="utf-8")
     (a.salida / "modelo_resultados.md").write_text(reporte_md(res), encoding="utf-8")
-    Path("models").mkdir(exist_ok=True)
-    modelo.booster_.save_model("models/lightgbm_desierta.txt")
+    from .exportar import exportar
+
+    destino = exportar(df, res, pred_test, a.db, a.artefactos)
+    print(f"Modelo de servicio exportado en {destino}")
     registrar_mlflow(res, Path.cwd())
     print(reporte_md(res))
     return 0

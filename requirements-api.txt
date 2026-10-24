@@ -1,0 +1,6 @@
+# Dependencias mínimas para servir el modelo (la imagen Docker no necesita dbt ni MLflow).
+fastapi>=0.115
+uvicorn[standard]>=0.30
+lightgbm>=4.5
+pandas>=2.2
+numpy>=1.26
