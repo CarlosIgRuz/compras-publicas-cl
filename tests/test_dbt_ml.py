@@ -38,6 +38,9 @@ def test_historial_point_in_time(tmp_path, monkeypatch):
     # listados: definen el último día disponible (para la cohorte)
     escribir(raw / "licitaciones", "fecha=2026-06-10.json.gz", [{"CodigoExterno": "A", "CodigoEstado": 7}])
     escribir(raw / "licitaciones", "fecha=2026-10-17.json.gz", [{"CodigoExterno": "Z", "CodigoEstado": 5}])
+    # licitación recién publicada (detalle al publicar): debe aparecer en ml_publicadas
+    escribir(raw / "detalle_publicacion", "fecha=2026-10-16.json.gz",
+             [detalle("N", 5, "2026-10-16T09:00:00", "2026-10-30T15:00:00")])
     db = tmp_path / "w.duckdb"
     monkeypatch.setenv("DUCKDB_PATH", str(db))
     res = dbt_main.dbtRunner().invoke([
@@ -56,3 +59,8 @@ def test_historial_point_in_time(tmp_path, monkeypatch):
     assert filas["C"][:2] == (1, round((1 + m * p0) / (1 + m), 4))  # ve A (desierta), no B
     # cohorte: publicadas desde el 1-abr y con 120 días de seguimiento hasta el 17-oct (≤ 19-jun)
     assert filas["A"][2] and filas["B"][2] and not filas["C"][2]
+
+    pub = duckdb.connect(str(db)).execute(
+        "select codigo, estado_al_descargar, rubro_principal, n_items, codigo_organismo, monto_estimado_clp from ml_publicadas"
+    ).fetchall()
+    assert pub == [("N", "publicada", "Salud", 1, "ORG", 1000000.0)]
