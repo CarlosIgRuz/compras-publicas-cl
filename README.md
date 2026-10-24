@@ -9,7 +9,7 @@ Built with AI coding agents under my direction: the decisions, validations and e
 
 | # | Project | Skills it demonstrates | Status |
 |---|---------|------------------------|--------|
-| 1 | Daily pipeline + model in production (API → DuckDB → dbt → MLflow → FastAPI → drift monitoring) | ML / Data Engineering | 🚧 in progress |
+| 1 | Daily pipeline + model in production (API → DuckDB → dbt → MLflow → FastAPI → monitoring) | ML / Data Engineering | 🚧 demo pending |
 | 2 | Causal study on competition in public tenders | Data Science (causal inference) | ⏳ |
 | 3 | RAG + Text-to-SQL agent with its own evaluation set | AI Engineering | ⏳ |
 
@@ -52,6 +52,14 @@ curl -X POST localhost:8000/predecir -H 'Content-Type: application/json' \
  "fuente": "Dirección ChileCompra"}
 ```
 
+## Monitoring
+The model runs as it would in production: every night the details of newly published tenders are downloaded, and a daily workflow scores them with the deployed model and stores each prediction ([`data/predicciones`](data/predicciones)). The report [`reports/monitoreo.md`](reports/monitoreo.md) answers three questions:
+1. **Did the data change?** Population Stability Index of each feature vs. the training cohort (last 28 days).
+2. **Did the predictions change?** Mean predicted probability and share of high-risk tenders.
+3. **Is it still right?** Stored predictions are matched with real outcomes as tenders resolve. Only tenders published ≥ 120 days ago count as a definitive evaluation — earlier outcomes are skewed toward void tenders, the same selection bias handled in training.
+
+Explicit retraining rules: any feature with PSI > 0.25, a calibration gap > 5 pp (≥ 300 definitive outcomes), ROC-AUC below the type × category baseline (≥ 500 definitive outcomes), or a model older than 90 days.
+
 ## Engineering highlights
 - **Nightly ingestion on GitHub Actions** that respects the API terms: a self-imposed daily quota of 9,000 requests tracked in a versioned run log, downloads only between 22:00 and 07:00 Chile time, adaptive back-off (~1.01 requests per tender), checkpoints and per-tender retries so one API error never stops a night. Because GitHub cron triggers proved unreliable (often hours late or dropped), a scheduled external dispatcher is the primary trigger and cron is the fallback.
 - **dbt + DuckDB warehouse** read straight from the raw JSON: staging, marts and a point-in-time ML table, with 34 data tests.
@@ -67,7 +75,9 @@ Mercado Público API ──► ingest (Python, GitHub Actions) ──► data/ra
                            │        │
           ML model (MLflow) ◄┘        └─► Text-to-SQL + RAG agent  (project 3)
                  │
-      FastAPI + Docker (prediction API) ──► drift monitoring (next)
+      FastAPI + Docker (prediction API)
+                 │
+      daily scoring + monitoring report (PSI, real outcomes, retraining rules)
 ```
 
 ## Quick start
@@ -86,6 +96,7 @@ uvicorn compras.api.app:app --app-dir src            # prediction API at http://
 - `dbt/` — SQL transformations (staging, marts, ml)
 - `src/compras/models` — training, evaluation and export of the serving model
 - `src/compras/api` — FastAPI prediction service (`Dockerfile`, `artifacts/modelo`)
+- `src/compras/monitor` — daily scoring of new tenders and monitoring report
 - `notebooks/` — exploratory analysis
 - `docs/ROADMAP.md` — plan and work log (Spanish)
 - `DECISIONS.md` — decision record (Spanish)
@@ -102,6 +113,7 @@ Ecosistema de datos de punta a punta sobre las compras públicas de Chile, const
 
 - **Pregunta:** ¿quedará desierta esta licitación?, predicha al momento de publicarla. Cerca de 1 de cada 5 licitaciones con resultado queda desierta.
 - **Pipeline:** ingesta nocturna en GitHub Actions que respeta las condiciones de uso de la API, warehouse en DuckDB con dbt y un modelo con split temporal y variables sin fuga de información.
+- **Monitoreo:** cada día se puntúan las licitaciones recién publicadas y un reporte revisa si cambiaron los datos, si cambió lo que predice el modelo y si sigue acertando al conocerse los resultados, con reglas explícitas para reentrenar.
 - **API:** servicio FastAPI en Docker que entrega la probabilidad, el nivel de riesgo y los tres factores que más pesaron.
 - **Resultados:** LightGBM y la regresión logística superan a las dos referencias simples (PR-AUC 0,32 frente a 0,26 y 0,21). Entre el 10% de licitaciones de mayor riesgo, el 40% queda desierta: casi el doble de la tasa base.
 - La bitácora ([`docs/ROADMAP.md`](docs/ROADMAP.md)) y las decisiones están en español.

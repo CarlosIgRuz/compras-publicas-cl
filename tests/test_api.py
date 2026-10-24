@@ -6,34 +6,10 @@ pytest.importorskip("fastapi")
 pytest.importorskip("lightgbm")
 from fastapi.testclient import TestClient  # noqa: E402
 
-from compras.models import exportar as ex  # noqa: E402
 from compras.models import train as t  # noqa: E402
-from test_train import datos_sinteticos  # noqa: E402
 
 
-@pytest.fixture(scope="module")
-def artefactos(tmp_path_factory, monkeypatch_module):
-    df = datos_sinteticos(n=2000)
-    df["codigo_organismo"] = np.where(df.index % 2 == 0, "ORG1", "ORG2")
-    res = t.evaluar(df)
-    pred = res.pop("_pred_test_lightgbm")
-    res.pop("_modelo_lightgbm")
-    destino = tmp_path_factory.mktemp("modelo")
-    hist = ({"ORG1": {"n": 40, "desiertas": 20, "nombre": "Organismo Uno"}},
-            {"Obras": {"n": 100, "desiertas": 40}})
-    monkeypatch_module.setattr(ex, "historiales", lambda db: hist)
-    ex.exportar(df, res, pred, db=None, destino=destino)
-    return destino
-
-
-@pytest.fixture(scope="module")
-def monkeypatch_module():
-    m = pytest.MonkeyPatch()
-    yield m
-    m.undo()
-
-
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def cliente(artefactos, monkeypatch_module):
     from compras.api import app as api
 

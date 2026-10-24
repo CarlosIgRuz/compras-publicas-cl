@@ -4,7 +4,8 @@
 > Para retomar, basta decirle al agente: **"continúa con compras-publicas-cl"**.
 
 ## Siguiente tarea
-**P1.9 — Monitoreo de drift con Evidently + job programado**: comparar las licitaciones publicadas cada semana con la cohorte de entrenamiento (variables y tasa de desiertas observada) y publicar un reporte; criterio explícito para reentrenar.
+1. **Revisar el primer reporte de monitoreo** después de la noche del 24-oct: que `detalle_publicacion` se haya llenado (~6.500 licitaciones publicadas desde el 1-oct), que la puntuación y el reporte corran en Actions y que el PSI sea razonable.
+2. **P1.10 — Demo pública**: necesita que Carlos elija dónde publicarla.
 
 ## Proyecto 1 · Pipeline + modelo en producción (~2 semanas)
 - [x] P1.1 Estructura del repo, cliente de la API, ingesta incremental, tests, CI
@@ -15,7 +16,7 @@
 - [x] P1.6 EDA en notebook + definición del objetivo (`es_desierta` al publicar) y cohorte sin sesgo de selección
 - [x] P1.7 Baseline + LightGBM con MLflow (split temporal, varias métricas)
 - [x] P1.8 API de predicción con FastAPI + Docker
-- [ ] P1.9 Monitoreo de drift con Evidently + job programado diario
+- [x] P1.9 Monitoreo: puntuación diaria de licitaciones nuevas, PSI, desempeño real y reglas de reentrenamiento
 - [ ] P1.10 Demo pública desplegada + README con resultados
 
 ## Proyecto 2 · Estudio causal (~1 semana)
@@ -51,3 +52,4 @@
 - **2026-10-23 (CI)** — CI falló al instalar DuckDB 2.0 (recién publicado), que eliminó `fetchone()` en las relaciones. Corrección: consultas con `con.execute(...)`, compatible con 1.x y 2.x. Verificado en un entorno limpio con Python 3.11 + DuckDB 2.0 (28 tests) y en local con DuckDB 1.5.
 - **2026-10-24** — P1.8: API FastAPI (`src/compras/api/app.py`) con `/health`, `/modelo`, `/opciones` y `POST /predecir` (probabilidad, nivel alto/medio/bajo, 3 factores principales vía SHAP de LightGBM, historial del organismo). El entrenamiento ahora exporta `artifacts/modelo/` (LightGBM reentrenado con toda la cohorte, metadata con categorías y umbrales, historial por organismo y rubro; ~290 KB). Test de consistencia entrenamiento/servicio: la API construye exactamente las mismas variables que `train.preparar`. Early stopping cambiado a log-loss: mismo ranking (PR-AUC 0,316, 39,6% en el top 10%) y probabilidades bien calibradas (antes 0,14 predicho → 0,10 observado; ahora 0,09 → 0,09, 0,34 → 0,32), con 113 árboles en vez de 32. Dockerfile liviano (`requirements-api.txt`, usuario sin privilegios, healthcheck). Docker Hub no es accesible desde el entorno del agente, así que la imagen se construye y prueba en GitHub Actions (`docker.yml`). 33 tests.
 - **2026-10-24 (verificación)** — El workflow `docker.yml` pasó en GitHub Actions: construye la imagen, levanta el contenedor y responde /health y /predecir. CI en verde.
+- **2026-10-24 (P1.9)** — Monitoreo: (1) nuevo modo de descarga `publicadas` (detalle al publicar de las licitaciones en estado publicada desde el 1-oct, `data/raw/detalle_publicacion`); corre antes que las resueltas en la misma ejecución y comparte cupo y bitácora (campo `modo`). (2) dbt: el tipado del detalle pasa a macros compartidas (`sql_detalle_tipado`, `sql_detalle_items`), con `stg_publicacion`, `stg_publicacion_items` y `ml_publicadas`; `leer_detalle` tolera una carpeta vacía. (3) `compras.monitor.puntuar` aplica el modelo desplegado (el mismo código de la API) y guarda las predicciones en `data/predicciones/predicciones.jsonl`. (4) `compras.monitor.reporte`: PSI por variable (cohorte de entrenamiento frente a los últimos 28 días), probabilidad media predicha, desempeño real separado en definitivo (≥120 días) y provisional, y reglas de reentrenamiento. (5) Workflow diario `monitoreo.yml`. Chequeo con datos reales: entrenamiento frente a jul–ago, todos los PSI < 0,04. Se corrigió un test que escribía en la bitácora real (la ruta por defecto quedaba fijada al importar). 39 tests.

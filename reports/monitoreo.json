@@ -1,0 +1,32 @@
+{
+  "generado": "2026-10-24T01:58:46",
+  "modelo": {
+    "version": "2026-10-24",
+    "edad_dias": 0,
+    "tasa_base": 0.20494053064958828
+  },
+  "referencia_n": 22254,
+  "ventana": {
+    "n": 0,
+    "desde": null,
+    "hasta": null
+  },
+  "drift": {},
+  "prediccion_media": NaN,
+  "niveles": {},
+  "desempeno": {
+    "predicciones": 0,
+    "resueltas": 0,
+    "definitivas": {
+      "n": 0
+    },
+    "provisionales": {
+      "n": 0
+    }
+  },
+  "recomendacion": {
+    "reentrenar": false,
+    "motivos": [],
+    "vigilar": []
+  }
+}
