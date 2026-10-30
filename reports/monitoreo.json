@@ -1,47 +1,47 @@
 {
-  "generado": "2026-10-29T19:13:11",
+  "generado": "2026-10-30T18:50:15",
   "modelo": {
     "version": "2026-10-24",
-    "edad_dias": 5,
+    "edad_dias": 6,
     "tasa_base": 0.20494053064958828
   },
-  "referencia_n": 23320,
+  "referencia_n": 23643,
   "ventana": {
-    "n": 8002,
+    "n": 8455,
     "desde": "2026-10-01",
-    "hasta": "2026-10-27"
+    "hasta": "2026-10-28"
   },
   "drift": {
-    "n_items": 0.0063,
+    "n_items": 0.0062,
     "n_rubros": 0.0,
-    "log_monto": 0.0112,
+    "log_monto": 0.01,
     "hora_publicacion": 0.0058,
-    "tipo": 0.0606,
-    "rubro_principal": 0.036,
-    "region": 0.013,
-    "moneda": 0.001,
+    "tipo": 0.059,
+    "rubro_principal": 0.034,
+    "region": 0.0116,
+    "moneda": 0.0005,
     "convocatoria": 0.0,
-    "dia_semana_publicacion": 0.0297,
-    "monto_desconocido": 0.0037
+    "dia_semana_publicacion": 0.019,
+    "monto_desconocido": 0.004
   },
-  "prediccion_media": 0.2094992876780805,
+  "prediccion_media": 0.2097523358959196,
   "niveles": {
-    "bajo": 0.5337415646088478,
-    "medio": 0.36790802299425146,
-    "alto": 0.09835041239690077
+    "bajo": 0.5336487285629805,
+    "medio": 0.36700177409816676,
+    "alto": 0.09934949733885275
   },
   "desempeno": {
-    "predicciones": 8002,
-    "resueltas": 628,
+    "predicciones": 8455,
+    "resueltas": 748,
     "definitivas": {
       "n": 0
     },
     "provisionales": {
-      "n": 628,
-      "tasa_observada": 0.4299,
-      "probabilidad_media": 0.2484,
-      "roc_auc": 0.6283,
-      "pr_auc": 0.5952
+      "n": 748,
+      "tasa_observada": 0.4051,
+      "probabilidad_media": 0.2434,
+      "roc_auc": 0.606,
+      "pr_auc": 0.5535
     }
   },
   "recomendacion": {
