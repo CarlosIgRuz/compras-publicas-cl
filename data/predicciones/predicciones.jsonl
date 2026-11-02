@@ -9421,3 +9421,11 @@
 {"codigo": "2405-163-LR26", "fecha_publicacion": "2026-10-30 20:22:42.260000", "probabilidad": 0.2637, "nivel": "medio", "modelo": "2026-10-24", "puntuado": "2026-11-01T15:33:29-03:00"}
 {"codigo": "1237853-23-LE26", "fecha_publicacion": "2026-10-30 20:43:38.710000", "probabilidad": 0.0822, "nivel": "bajo", "modelo": "2026-10-24", "puntuado": "2026-11-01T15:33:29-03:00"}
 {"codigo": "2994-36-LE26", "fecha_publicacion": "2026-10-30 22:30:21.887000", "probabilidad": 0.1435, "nivel": "bajo", "modelo": "2026-10-24", "puntuado": "2026-11-01T15:33:29-03:00"}
+{"codigo": "3847-44-LP26", "fecha_publicacion": "2026-10-31 00:41:50.967000", "probabilidad": 0.2234, "nivel": "medio", "modelo": "2026-10-24", "puntuado": "2026-11-02T19:28:44-03:00"}
+{"codigo": "1057509-369-LP26", "fecha_publicacion": "2026-10-31 10:01:47.700000", "probabilidad": 0.2883, "nivel": "medio", "modelo": "2026-10-24", "puntuado": "2026-11-02T19:28:44-03:00"}
+{"codigo": "1350137-7-LE26", "fecha_publicacion": "2026-10-31 11:14:09.720000", "probabilidad": 0.1115, "nivel": "bajo", "modelo": "2026-10-24", "puntuado": "2026-11-02T19:28:44-03:00"}
+{"codigo": "1350137-8-LE26", "fecha_publicacion": "2026-10-31 12:18:28.663000", "probabilidad": 0.1611, "nivel": "bajo", "modelo": "2026-10-24", "puntuado": "2026-11-02T19:28:44-03:00"}
+{"codigo": "1057509-272-LP26", "fecha_publicacion": "2026-10-31 12:22:36.607000", "probabilidad": 0.2159, "nivel": "medio", "modelo": "2026-10-24", "puntuado": "2026-11-02T19:28:44-03:00"}
+{"codigo": "1350137-9-LE26", "fecha_publicacion": "2026-10-31 12:35:57.697000", "probabilidad": 0.1762, "nivel": "bajo", "modelo": "2026-10-24", "puntuado": "2026-11-02T19:28:44-03:00"}
+{"codigo": "875646-77-LP26", "fecha_publicacion": "2026-10-31 13:47:03.057000", "probabilidad": 0.1043, "nivel": "bajo", "modelo": "2026-10-24", "puntuado": "2026-11-02T19:28:44-03:00"}
+{"codigo": "1350137-11-LE26", "fecha_publicacion": "2026-10-31 16:06:05.030000", "probabilidad": 0.1873, "nivel": "bajo", "modelo": "2026-10-24", "puntuado": "2026-11-02T19:28:44-03:00"}
