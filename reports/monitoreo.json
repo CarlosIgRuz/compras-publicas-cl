@@ -1,37 +1,37 @@
 {
-  "generado": "2026-11-02T22:28:46",
+  "generado": "2026-11-03T20:17:12",
   "modelo": {
     "version": "2026-10-24",
-    "edad_dias": 9,
+    "edad_dias": 10,
     "tasa_base": 0.20494053064958828
   },
-  "referencia_n": 24292,
+  "referencia_n": 24293,
   "ventana": {
-    "n": 8950,
-    "desde": "2026-10-03",
-    "hasta": "2026-10-31"
+    "n": 8951,
+    "desde": "2026-10-05",
+    "hasta": "2026-11-01"
   },
   "drift": {
     "n_items": 0.0065,
     "n_rubros": 0.0,
-    "log_monto": 0.0079,
-    "hora_publicacion": 0.0058,
-    "tipo": 0.058,
-    "rubro_principal": 0.0313,
+    "log_monto": 0.008,
+    "hora_publicacion": 0.0056,
+    "tipo": 0.0579,
+    "rubro_principal": 0.0314,
     "region": 0.0112,
     "moneda": 0.0003,
     "convocatoria": 0.0002,
     "dia_semana_publicacion": 0.0243,
     "monto_desconocido": 0.0041
   },
-  "prediccion_media": 0.20912340782122907,
+  "prediccion_media": 0.20914809518489555,
   "niveles": {
-    "bajo": 0.5346368715083799,
-    "medio": 0.36905027932960893,
-    "alto": 0.09631284916201117
+    "bajo": 0.5344654228577812,
+    "medio": 0.3692324879901687,
+    "alto": 0.09630208915205005
   },
   "desempeno": {
-    "predicciones": 9431,
+    "predicciones": 9434,
     "resueltas": 1259,
     "definitivas": {
       "n": 0

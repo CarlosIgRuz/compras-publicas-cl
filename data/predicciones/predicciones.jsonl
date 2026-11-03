@@ -9429,3 +9429,6 @@
 {"codigo": "1350137-9-LE26", "fecha_publicacion": "2026-10-31 12:35:57.697000", "probabilidad": 0.1762, "nivel": "bajo", "modelo": "2026-10-24", "puntuado": "2026-11-02T19:28:44-03:00"}
 {"codigo": "875646-77-LP26", "fecha_publicacion": "2026-10-31 13:47:03.057000", "probabilidad": 0.1043, "nivel": "bajo", "modelo": "2026-10-24", "puntuado": "2026-11-02T19:28:44-03:00"}
 {"codigo": "1350137-11-LE26", "fecha_publicacion": "2026-10-31 16:06:05.030000", "probabilidad": 0.1873, "nivel": "bajo", "modelo": "2026-10-24", "puntuado": "2026-11-02T19:28:44-03:00"}
+{"codigo": "3686-33-LE26", "fecha_publicacion": "2026-11-01 10:44:23.677000", "probabilidad": 0.2873, "nivel": "medio", "modelo": "2026-10-24", "puntuado": "2026-11-03T17:17:10-03:00"}
+{"codigo": "3686-34-LP26", "fecha_publicacion": "2026-11-01 11:42:04.173000", "probabilidad": 0.2628, "nivel": "medio", "modelo": "2026-10-24", "puntuado": "2026-11-03T17:17:10-03:00"}
+{"codigo": "1969-21-LE26", "fecha_publicacion": "2026-11-01 15:20:00", "probabilidad": 0.2531, "nivel": "medio", "modelo": "2026-10-24", "puntuado": "2026-11-03T17:17:10-03:00"}
