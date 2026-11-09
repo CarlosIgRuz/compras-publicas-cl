@@ -1,11 +1,11 @@
 # Monitoreo del modelo de licitaciones desiertas
 
-Generado: 2026-11-08T18:30:19 · Modelo: 2026-10-24 (15 días)
+Generado: 2026-11-09T23:09:30 · Modelo: 2026-10-24 (16 días)
 
 **No es necesario reentrenar.**
 
 ## 1. ¿Cambiaron los datos?
-Licitaciones publicadas en los últimos 28 días (2026-10-10 → 2026-11-06, n = 9015) frente a la cohorte de entrenamiento (n = 26062). PSI: < 0.1 estable, 0.1–0.25 vigilar, > 0.25 alerta.
+Licitaciones publicadas en los últimos 28 días (2026-10-12 → 2026-11-07, n = 9022) frente a la cohorte de entrenamiento (n = 26071). PSI: < 0.1 estable, 0.1–0.25 vigilar, > 0.25 alerta.
 
 | Variable | PSI | Estado |
 |---|---|---|
@@ -25,7 +25,7 @@ Licitaciones publicadas en los últimos 28 días (2026-10-10 → 2026-11-06, n =
 Probabilidad media predicha en la ventana: **20.7%** (tasa base del entrenamiento: 20.5%). Nivel alto: 9.7% de las licitaciones (esperado ≈ 10%).
 
 ## 3. ¿Sigue acertando?
-11778 predicciones guardadas; 2041 ya resueltas. Solo las publicadas hace ≥ 120 días son una evaluación definitiva (las que se resuelven antes están sesgadas hacia desiertas).
+11790 predicciones guardadas; 2041 ya resueltas. Solo las publicadas hace ≥ 120 días son una evaluación definitiva (las que se resuelven antes están sesgadas hacia desiertas).
 
 | Evaluación | n | Probabilidad media predicha | Tasa observada | ROC-AUC |
 |---|---|---|---|---|
