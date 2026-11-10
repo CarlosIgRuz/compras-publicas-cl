@@ -1,11 +1,11 @@
 {
-  "generado": "2026-11-09T23:09:30",
+  "generado": "2026-11-10T20:37:00",
   "modelo": {
     "version": "2026-10-24",
-    "edad_dias": 16,
+    "edad_dias": 17,
     "tasa_base": 0.20494053064958828
   },
-  "referencia_n": 26071,
+  "referencia_n": 26074,
   "ventana": {
     "n": 9022,
     "desde": "2026-10-12",
@@ -15,13 +15,13 @@
     "n_items": 0.0029,
     "n_rubros": 0.0,
     "log_monto": 0.0052,
-    "hora_publicacion": 0.0063,
+    "hora_publicacion": 0.0062,
     "tipo": 0.0419,
     "rubro_principal": 0.0286,
     "region": 0.0095,
     "moneda": 0.0006,
     "convocatoria": 0.0002,
-    "dia_semana_publicacion": 0.0155,
+    "dia_semana_publicacion": 0.0154,
     "monto_desconocido": 0.0026
   },
   "prediccion_media": 0.20724199733983598,
@@ -32,16 +32,16 @@
   },
   "desempeno": {
     "predicciones": 11790,
-    "resueltas": 2041,
+    "resueltas": 2281,
     "definitivas": {
       "n": 0
     },
     "provisionales": {
-      "n": 2041,
-      "tasa_observada": 0.317,
-      "probabilidad_media": 0.2335,
-      "roc_auc": 0.63,
-      "pr_auc": 0.4603
+      "n": 2281,
+      "tasa_observada": 0.3117,
+      "probabilidad_media": 0.2331,
+      "roc_auc": 0.6321,
+      "pr_auc": 0.4584
     }
   },
   "recomendacion": {
