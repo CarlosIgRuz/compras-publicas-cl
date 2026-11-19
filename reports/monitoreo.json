@@ -1,37 +1,37 @@
 {
-  "generado": "2026-11-18T21:35:38",
+  "generado": "2026-11-19T21:47:45",
   "modelo": {
     "version": "2026-10-24",
-    "edad_dias": 25,
+    "edad_dias": 26,
     "tasa_base": 0.20494053064958828
   },
-  "referencia_n": 27862,
+  "referencia_n": 28229,
   "ventana": {
-    "n": 9591,
-    "desde": "2026-10-19",
-    "hasta": "2026-11-16"
+    "n": 9587,
+    "desde": "2026-10-21",
+    "hasta": "2026-11-17"
   },
   "drift": {
-    "n_items": 0.0036,
+    "n_items": 0.004,
     "n_rubros": 0.0,
-    "log_monto": 0.0068,
-    "hora_publicacion": 0.0048,
-    "tipo": 0.0202,
-    "rubro_principal": 0.0308,
-    "region": 0.0066,
+    "log_monto": 0.0064,
+    "hora_publicacion": 0.0055,
+    "tipo": 0.0166,
+    "rubro_principal": 0.03,
+    "region": 0.0052,
     "moneda": 0.0002,
-    "convocatoria": 0.0,
-    "dia_semana_publicacion": 0.0085,
-    "monto_desconocido": 0.0022
+    "convocatoria": 0.0001,
+    "dia_semana_publicacion": 0.0091,
+    "monto_desconocido": 0.0023
   },
-  "prediccion_media": 0.20960449379626733,
+  "prediccion_media": 0.20965085010952333,
   "niveles": {
-    "bajo": 0.5282035241372119,
-    "medio": 0.3685747054530289,
-    "alto": 0.10322177040975915
+    "bajo": 0.5274851361218317,
+    "medio": 0.3697715656618337,
+    "alto": 0.10274329821633461
   },
   "desempeno": {
-    "predicciones": 14711,
+    "predicciones": 15171,
     "resueltas": 3602,
     "definitivas": {
       "n": 0
