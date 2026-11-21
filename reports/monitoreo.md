@@ -1,18 +1,18 @@
 # Monitoreo del modelo de licitaciones desiertas
 
-Generado: 2026-11-20T21:32:05 · Modelo: 2026-10-24 (27 días)
+Generado: 2026-11-21T20:14:47 · Modelo: 2026-10-24 (28 días)
 
 **No es necesario reentrenar.**
 
 ## 1. ¿Cambiaron los datos?
-Licitaciones publicadas en los últimos 28 días (2026-10-22 → 2026-11-18, n = 9565) frente a la cohorte de entrenamiento (n = 28641). PSI: < 0.1 estable, 0.1–0.25 vigilar, > 0.25 alerta.
+Licitaciones publicadas en los últimos 28 días (2026-10-22 → 2026-11-19, n = 9608) frente a la cohorte de entrenamiento (n = 29024). PSI: < 0.1 estable, 0.1–0.25 vigilar, > 0.25 alerta.
 
 | Variable | PSI | Estado |
 |---|---|---|
 | rubro_principal | 0.029 | 🟢 estable |
-| tipo | 0.015 | 🟢 estable |
-| dia_semana_publicacion | 0.014 | 🟢 estable |
-| log_monto | 0.006 | 🟢 estable |
+| dia_semana_publicacion | 0.013 | 🟢 estable |
+| tipo | 0.011 | 🟢 estable |
+| log_monto | 0.007 | 🟢 estable |
 | region | 0.006 | 🟢 estable |
 | hora_publicacion | 0.006 | 🟢 estable |
 | n_items | 0.004 | 🟢 estable |
@@ -22,15 +22,15 @@ Licitaciones publicadas en los últimos 28 días (2026-10-22 → 2026-11-18, n =
 | n_rubros | 0.000 | 🟢 estable |
 
 ## 2. ¿Cambió lo que predice el modelo?
-Probabilidad media predicha en la ventana: **21.0%** (tasa base del entrenamiento: 20.5%). Nivel alto: 10.3% de las licitaciones (esperado ≈ 10%).
+Probabilidad media predicha en la ventana: **20.9%** (tasa base del entrenamiento: 20.5%). Nivel alto: 10.2% de las licitaciones (esperado ≈ 10%).
 
 ## 3. ¿Sigue acertando?
-15627 predicciones guardadas; 4185 ya resueltas. Solo las publicadas hace ≥ 120 días son una evaluación definitiva (las que se resuelven antes están sesgadas hacia desiertas).
+16122 predicciones guardadas; 4481 ya resueltas. Solo las publicadas hace ≥ 120 días son una evaluación definitiva (las que se resuelven antes están sesgadas hacia desiertas).
 
 | Evaluación | n | Probabilidad media predicha | Tasa observada | ROC-AUC |
 |---|---|---|---|---|
 | Definitiva (≥ 120 días) | 0 | – | – | – |
-| Provisional (sesgada) | 4185 | 22.8% | 27.6% | 0.626 |
+| Provisional (sesgada) | 4481 | 22.7% | 26.9% | 0.628 |
 
 ## Reglas de reentrenamiento
 Reentrenar si ocurre cualquiera de estas condiciones: alguna variable con PSI > 0.25; con ≥ 300 evaluaciones definitivas, diferencia entre lo predicho y lo observado > 5%; con ≥ 500 definitivas, ROC-AUC < 0.589 (el baseline tipo × rubro); o un modelo de más de 90 días.
