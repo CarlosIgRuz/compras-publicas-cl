@@ -1,11 +1,11 @@
 {
-  "generado": "2026-11-24T01:12:33",
+  "generado": "2026-11-24T23:16:17",
   "modelo": {
     "version": "2026-10-24",
     "edad_dias": 31,
     "tasa_base": 0.20494053064958828
   },
-  "referencia_n": 29433,
+  "referencia_n": 29435,
   "ventana": {
     "n": 9546,
     "desde": "2026-10-26",
@@ -32,16 +32,16 @@
   },
   "desempeno": {
     "predicciones": 16624,
-    "resueltas": 5121,
+    "resueltas": 5130,
     "definitivas": {
       "n": 0
     },
     "provisionales": {
-      "n": 5121,
-      "tasa_observada": 0.2572,
+      "n": 5130,
+      "tasa_observada": 0.2577,
       "probabilidad_media": 0.2255,
-      "roc_auc": 0.6283,
-      "pr_auc": 0.3883
+      "roc_auc": 0.6276,
+      "pr_auc": 0.388
     }
   },
   "recomendacion": {
