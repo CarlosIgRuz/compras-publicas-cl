@@ -9,7 +9,7 @@ Built with AI coding agents under my direction: the decisions, validations and e
 
 | # | Project | Skills it demonstrates | Status |
 |---|---------|------------------------|--------|
-| 1 | Daily pipeline + model in production (API → DuckDB → dbt → MLflow → FastAPI → monitoring) | ML / Data Engineering | 🚧 demo pending |
+| 1 | Daily pipeline + model in production (API → DuckDB → dbt → MLflow → FastAPI → monitoring → [demo](https://huggingface.co/spaces/CarlosIgRuz/licitaciones-desiertas)) | ML / Data Engineering | ✅ |
 | 2 | Causal study on competition in public tenders | Data Science (causal inference) | ⏳ |
 | 3 | RAG + Text-to-SQL agent with its own evaluation set | AI Engineering | ⏳ |
 
@@ -37,7 +37,7 @@ Temporal split by publication date (train Apr 1 → Jun 1, validation → Jun 11
 **Leakage checks:** with shuffled labels both models drop to ROC-AUC ≈ 0.50. The planned closing date was removed as a feature: it comes from the final record (deadline extensions happen after publication) and added only +0.01 PR-AUC, within the confidence interval.
 
 ## Prediction API and demo
-A small demo page (served by the API at `/`) lets anyone fill in a tender and see the risk, its level and the main drivers. Public demo on Hugging Face Spaces: *coming soon*.
+**[Try the live demo on Hugging Face →](https://huggingface.co/spaces/CarlosIgRuz/licitaciones-desiertas)** Fill in a tender and see the risk, its level and the main drivers. The demo is a static page: the LightGBM model is exported to JSON and evaluated in the browser by a small JavaScript scorer, with a parity test against the Python model (difference < 1e-4 over 800 cases), so nothing a visitor types leaves their browser.
 
 FastAPI service that scores a tender at publication time and explains the top three drivers (LightGBM SHAP contributions). The buyer's history is looked up from artifacts exported at training time, and a test guarantees the API builds features exactly like the training pipeline (no training/serving skew). The Docker image is built and smoke-tested on every change by [a GitHub Actions workflow](.github/workflows/docker.yml).
 
@@ -116,6 +116,7 @@ Ecosistema de datos de punta a punta sobre las compras públicas de Chile, const
 - **Pregunta:** ¿quedará desierta esta licitación?, predicha al momento de publicarla. Cerca de 1 de cada 5 licitaciones con resultado queda desierta.
 - **Pipeline:** ingesta nocturna en GitHub Actions que respeta las condiciones de uso de la API, warehouse en DuckDB con dbt y un modelo con split temporal y variables sin fuga de información.
 - **Monitoreo:** cada día se puntúan las licitaciones recién publicadas y un reporte revisa si cambiaron los datos, si cambió lo que predice el modelo y si sigue acertando al conocerse los resultados, con reglas explícitas para reentrenar.
+- **Demo:** [huggingface.co/spaces/CarlosIgRuz/licitaciones-desiertas](https://huggingface.co/spaces/CarlosIgRuz/licitaciones-desiertas), con el modelo corriendo en el navegador.
 - **API:** servicio FastAPI en Docker que entrega la probabilidad, el nivel de riesgo y los tres factores que más pesaron.
 - **Resultados:** LightGBM y la regresión logística superan a las dos referencias simples (PR-AUC 0,32 frente a 0,26 y 0,21). Entre el 10% de licitaciones de mayor riesgo, el 40% queda desierta: casi el doble de la tasa base.
 - La bitácora ([`docs/ROADMAP.md`](docs/ROADMAP.md)) y las decisiones están en español.
