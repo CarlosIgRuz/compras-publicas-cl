@@ -1,7 +1,7 @@
-"""Publica la demo (API + página) en un Space de Hugging Face (P1.10).
+"""Publica la demo en un Space estático de Hugging Face (P1.10).
 
-Arma una carpeta mínima con lo que necesita la imagen Docker (Dockerfile, requirements de la API,
-código de la API y artefactos del modelo) más el README del Space, y la sube con huggingface_hub.
+Arma una carpeta con la página, el evaluador del modelo en JavaScript y el modelo exportado a JSON,
+más el README del Space, y la sube con huggingface_hub.
 Requiere la variable de entorno HF_TOKEN (token con permiso de escritura). El Space es
 `<usuario>/licitaciones-desiertas` salvo que se indique HF_SPACE.
 
@@ -10,24 +10,27 @@ Uso: python -m compras.deploy.space [--solo-preparar carpeta]
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import shutil
 from pathlib import Path
 
-ARCHIVOS = ["Dockerfile", "requirements-api.txt", "src/compras/__init__.py"]
-CARPETAS = ["src/compras/api", "artifacts/modelo"]
 NOMBRE_SPACE = "licitaciones-desiertas"
+ESTATICOS = Path("src/compras/api/static")
 
 
 def preparar(destino: Path, raiz: Path = Path(".")) -> Path:
+    """Space estático: la página, el evaluador del modelo en JS y el modelo exportado a JSON.
+    (Hugging Face cobra por los Spaces con Docker; los estáticos son gratis. Ver DECISIONS.md.)"""
+    from compras.deploy.web import exportar_web
+
     if destino.exists():
         shutil.rmtree(destino)
     destino.mkdir(parents=True)
-    for a in ARCHIVOS:
-        (destino / a).parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(raiz / a, destino / a)
-    for c in CARPETAS:
-        shutil.copytree(raiz / c, destino / c, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+    for archivo in ("index.html", "modelo.js"):
+        shutil.copy2(raiz / ESTATICOS / archivo, destino / archivo)
+    modelo = exportar_web(raiz / "artifacts" / "modelo")
+    (destino / "modelo.json").write_text(json.dumps(modelo, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     shutil.copy2(raiz / "space" / "README.md", destino / "README.md")
     return destino
 
@@ -37,7 +40,7 @@ def publicar(carpeta: Path, token: str, space: str | None = None) -> str:
 
     api = HfApi(token=token)
     repo = space or f"{api.whoami()['name']}/{NOMBRE_SPACE}"
-    api.create_repo(repo, repo_type="space", space_sdk="docker", exist_ok=True)
+    api.create_repo(repo, repo_type="space", space_sdk="static", exist_ok=True)
     api.upload_folder(folder_path=str(carpeta), repo_id=repo, repo_type="space",
                       commit_message="Despliegue desde GitHub", delete_patterns=["*"])
     return f"https://huggingface.co/spaces/{repo}"

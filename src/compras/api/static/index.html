@@ -155,11 +155,12 @@
 
   <footer>
     Modelo LightGBM entrenado con licitaciones publicadas entre abril y junio de 2026. En datos que no vio al entrenar, el 10% de licitaciones que marca como más riesgosas quedó desierta el 40% de las veces, el doble que el promedio. Es una estimación para priorizar revisiones, no una garantía.
-    El <a href="https://github.com/CarlosIgRuz/compras-publicas-cl">código y la metodología</a> están en GitHub, y la <a href="/docs">API</a> está documentada.
+    El modelo corre en tu navegador: los datos que ingresas no se envían a ningún servidor. El <a href="https://github.com/CarlosIgRuz/compras-publicas-cl">código, la metodología y la API</a> están en GitHub.
     <br>Fuente de los datos: Dirección ChileCompra.
   </footer>
 </div>
 
+<script src="modelo.js"></script>
 <script>
 const TIPOS = {
   L1: "L1 · menos de 100 UTM", LE: "LE · 100 a 1.000 UTM", LP: "LP · 1.000 a 2.000 UTM",
@@ -176,13 +177,13 @@ function opciones(select, valores, etiqueta = (v) => v, vacia) {
     valores.map((v) => `<option value="${v}">${etiqueta(v)}</option>`).join("");
 }
 
+let modelo = null;
+
 async function cargar() {
-  const [cats, orgs, info] = await Promise.all([
-    fetch("/opciones").then((r) => r.json()),
-    fetch("/organismos").then((r) => r.json()),
-    fetch("/modelo").then((r) => r.json()),
-  ]);
-  tasaBase = info.tasa_base;
+  // El modelo se evalúa en el navegador (modelo.js + modelo.json): no hace falta un servidor.
+  modelo = await fetch("modelo.json").then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); });
+  const cats = modelo.categorias;
+  tasaBase = modelo.tasa_base;
   const tipos = cats.tipo.filter((t) => t !== "desconocido")
     .sort((a, b) => (TIPOS[a] ? 0 : 1) - (TIPOS[b] ? 0 : 1) || a.localeCompare(b));
   opciones($("tipo"), tipos, (t) => TIPOS[t] || `${t} · otro procedimiento`);
@@ -190,8 +191,11 @@ async function cargar() {
   opciones($("rubro"), cats.rubro_principal.filter((r) => r !== "desconocido"));
   $("rubro").value = "Equipamiento y suministros médicos";
   opciones($("region"), cats.region.filter((r) => r !== "desconocido"), (r) => r.replace(/^Región (de la |de los |del |de )?/, ""), "Sin especificar");
-  organismos = orgs;
-  $("lista-organismos").innerHTML = orgs.map((o) => `<option value="${o.nombre}">`).join("");
+  organismos = Object.entries(modelo.historial_organismos)
+    .filter(([, h]) => h.n >= 5 && h.nombre)
+    .map(([codigo, h]) => ({ codigo, nombre: h.nombre }))
+    .sort((a, b) => a.nombre.localeCompare(b.nombre));
+  $("lista-organismos").innerHTML = organismos.map((o) => `<option value="${o.nombre}">`).join("");
 }
 
 function montoNumero() {
@@ -239,18 +243,14 @@ function mostrar(r) {
     <p class="organismo">${org}</p>`;
 }
 
-async function estimar(cuerpo) {
+function estimar(cuerpo) {
   $("error").hidden = true;
-  $("estimar").disabled = true;
   try {
-    const r = await fetch("/predecir", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(cuerpo) });
-    if (!r.ok) throw new Error((await r.json()).detail?.toString() || `Error ${r.status}`);
-    mostrar(await r.json());
+    if (!modelo) throw new Error("el modelo aún no termina de cargar");
+    mostrar(ModeloDesierta.predecir(modelo, cuerpo));
   } catch (e) {
     $("error").textContent = "No se pudo estimar el riesgo: " + e.message;
     $("error").hidden = false;
-  } finally {
-    $("estimar").disabled = false;
   }
 }
 

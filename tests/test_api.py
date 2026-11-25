@@ -86,12 +86,21 @@ def test_pagina_demo_y_organismos(cliente):
 def test_carpeta_del_space_tiene_lo_necesario(tmp_path):
     from pathlib import Path
 
+    import pytest as _pytest
+
     from compras.deploy.space import preparar
 
     raiz = Path(__file__).resolve().parents[1]
+    if not (raiz / "artifacts/modelo/lightgbm.txt").exists():
+        _pytest.skip("requiere el modelo real")
     c = preparar(tmp_path / "space", raiz)
-    for f in ["Dockerfile", "README.md", "requirements-api.txt", "src/compras/api/app.py",
-              "src/compras/api/static/index.html", "artifacts/modelo/lightgbm.txt", "artifacts/modelo/metadata.json"]:
-        assert (c / f).exists(), f
-    assert "sdk: docker" in (c / "README.md").read_text() and "app_port: 8000" in (c / "README.md").read_text()
-    assert not list(c.rglob("__pycache__"))
+    assert sorted(p.name for p in c.iterdir()) == ["README.md", "index.html", "modelo.js", "modelo.json"]
+    readme = (c / "README.md").read_text()
+    assert "sdk: static" in readme and "app_file: index.html" in readme
+    assert "Dirección ChileCompra" in (c / "index.html").read_text()
+
+
+def test_api_sirve_el_modelo_para_el_navegador(cliente):
+    assert cliente.get("/modelo.js").status_code == 200
+    m = cliente.get("/modelo.json").json()
+    assert m["arboles"] and m["variables"][0] == "tipo"

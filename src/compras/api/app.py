@@ -155,6 +155,24 @@ def raiz():
     return FileResponse(ESTATICOS / "index.html")
 
 
+@app.get("/modelo.js", include_in_schema=False)
+def modelo_js():
+    return FileResponse(ESTATICOS / "modelo.js", media_type="text/javascript")
+
+
+@lru_cache(maxsize=1)
+def _modelo_web() -> dict:
+    from compras.deploy.web import exportar_web
+
+    return exportar_web(modelo().carpeta)
+
+
+@app.get("/modelo.json", include_in_schema=False)
+def modelo_json():
+    """El mismo modelo exportado para el navegador (lo usa la página de demo)."""
+    return _modelo_web()
+
+
 @app.get("/health")
 def health():
     m = modelo()

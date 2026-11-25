@@ -12,6 +12,7 @@ RUN pip install --no-cache-dir -r requirements-api.txt
 
 COPY src/compras/__init__.py src/compras/__init__.py
 COPY src/compras/api src/compras/api
+COPY src/compras/deploy src/compras/deploy
 COPY artifacts/modelo artifacts/modelo
 
 ENV PYTHONPATH=/app/src MODELO_DIR=/app/artifacts/modelo PORT=8000
