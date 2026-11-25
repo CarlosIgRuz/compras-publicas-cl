@@ -1,31 +1,31 @@
 # Monitoreo del modelo de licitaciones desiertas
 
-Generado: 2026-11-24T23:16:17 · Modelo: 2026-10-24 (31 días)
+Generado: 2026-11-25T22:44:20 · Modelo: 2026-10-24 (32 días)
 
 **No es necesario reentrenar.**
 
 ## 1. ¿Cambiaron los datos?
-Licitaciones publicadas en los últimos 28 días (2026-10-26 → 2026-11-22, n = 9546) frente a la cohorte de entrenamiento (n = 29435). PSI: < 0.1 estable, 0.1–0.25 vigilar, > 0.25 alerta.
+Licitaciones publicadas en los últimos 28 días (2026-10-26 → 2026-11-23, n = 9535) frente a la cohorte de entrenamiento (n = 29778). PSI: < 0.1 estable, 0.1–0.25 vigilar, > 0.25 alerta.
 
 | Variable | PSI | Estado |
 |---|---|---|
-| rubro_principal | 0.028 | 🟢 estable |
-| tipo | 0.010 | 🟢 estable |
+| rubro_principal | 0.029 | 🟢 estable |
+| tipo | 0.009 | 🟢 estable |
 | dia_semana_publicacion | 0.008 | 🟢 estable |
 | log_monto | 0.007 | 🟢 estable |
 | hora_publicacion | 0.006 | 🟢 estable |
 | region | 0.005 | 🟢 estable |
-| n_items | 0.004 | 🟢 estable |
+| n_items | 0.003 | 🟢 estable |
 | monto_desconocido | 0.002 | 🟢 estable |
-| moneda | 0.000 | 🟢 estable |
 | convocatoria | 0.000 | 🟢 estable |
+| moneda | 0.000 | 🟢 estable |
 | n_rubros | 0.000 | 🟢 estable |
 
 ## 2. ¿Cambió lo que predice el modelo?
-Probabilidad media predicha en la ventana: **20.9%** (tasa base del entrenamiento: 20.5%). Nivel alto: 10.2% de las licitaciones (esperado ≈ 10%).
+Probabilidad media predicha en la ventana: **20.9%** (tasa base del entrenamiento: 20.5%). Nivel alto: 10.1% de las licitaciones (esperado ≈ 10%).
 
 ## 3. ¿Sigue acertando?
-16624 predicciones guardadas; 5130 ya resueltas. Solo las publicadas hace ≥ 120 días son una evaluación definitiva (las que se resuelven antes están sesgadas hacia desiertas).
+17016 predicciones guardadas; 5130 ya resueltas. Solo las publicadas hace ≥ 120 días son una evaluación definitiva (las que se resuelven antes están sesgadas hacia desiertas).
 
 | Evaluación | n | Probabilidad media predicha | Tasa observada | ROC-AUC |
 |---|---|---|---|---|
