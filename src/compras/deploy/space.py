@@ -55,7 +55,12 @@ def main(argv: list[str] | None = None) -> int:
     if not token:
         print("Falta HF_TOKEN: no se publica el Space.")
         return 0
-    print("Space publicado:", publicar(carpeta, token, os.environ.get("HF_SPACE") or None))
+    try:
+        print("Space publicado:", publicar(carpeta, token, os.environ.get("HF_SPACE") or None))
+    except Exception as e:  # noqa: BLE001 — se reporta como anotación legible en GitHub
+        mensaje = str(e).replace(token, "***").replace("\n", " ")[:900]
+        print(f"::error title=Publicar Space::{type(e).__name__}: {mensaje}")
+        return 1
     return 0
 
 
