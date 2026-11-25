@@ -65,7 +65,23 @@
   .secundario { padding: 10px 14px; background: transparent; color: var(--accion); border: 1px solid var(--linea); }
   button:disabled { opacity: .6; cursor: progress; }
 
-  .resultado { position: sticky; top: 24px; }
+  .lateral { display: grid; gap: 40px; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .oportunidades h2 { font-size: 15px; font-weight: 600; margin: 0 0 4px; }
+  .oportunidades h3 { font-size: 15px; font-weight: 600; margin: 28px 0 8px; }
+  .nota { font-size: 13px; color: var(--tinta-suave); margin: 0 0 12px; }
+  .ranking { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .ranking th { text-align: left; font-weight: 500; color: var(--tinta-suave); font-size: 13px; padding: 0 0 6px; }
+  .ranking th:nth-child(n+2), .ranking td:nth-child(n+2) { text-align: right; white-space: nowrap; padding-left: 12px; }
+  .ranking td { padding: 8px 0; border-top: 1px solid var(--linea); vertical-align: top; }
+  .ranking .medidor { display: inline-block; width: 48px; height: 6px; border-radius: 3px; background: var(--linea); margin-right: 8px; vertical-align: middle; position: relative; overflow: hidden; }
+  .ranking .medidor i { position: absolute; inset: 0 auto 0 0; background: var(--alto); border-radius: 3px; }
+  .abiertas { list-style: none; padding: 0; margin: 0 0 16px; }
+  .abiertas li { padding: 10px 0; border-top: 1px solid var(--linea); display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; }
+  .abiertas a { color: var(--tinta); font-weight: 500; text-decoration: underline; text-decoration-color: var(--linea); text-underline-offset: 3px; }
+  .abiertas a:hover { text-decoration-color: var(--accion); }
+  .abiertas .p { font: 700 18px/1.2 "Zilla Slab", Georgia, serif; color: var(--alto); grid-row: span 2; align-self: center; }
+  .abiertas small { color: var(--tinta-suave); font-size: 13px; }
   .vacio { border: 1px dashed var(--linea); border-radius: var(--radio); padding: 28px 24px; color: var(--tinta-suave); }
   .veredicto { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
   .timbre {
@@ -148,9 +164,23 @@
       <p class="error" id="error" role="alert" hidden></p>
     </form>
 
-    <section class="resultado" aria-live="polite" id="resultado">
-      <div class="vacio">Completa la ficha o prueba uno de los ejemplos para ver la estimación.</div>
-    </section>
+    <aside class="lateral">
+      <section class="resultado" aria-live="polite" id="resultado">
+        <div class="vacio">Completa la ficha o prueba uno de los ejemplos para ver la estimación.</div>
+      </section>
+      <section class="oportunidades" id="oportunidades" hidden>
+        <h2>Dónde hay menos competencia ahora</h2>
+        <p class="nota" id="op-nota"></p>
+        <table class="ranking">
+          <caption class="sr">Rubros con mayor riesgo de licitaciones desiertas</caption>
+          <thead><tr><th scope="col">Rubro</th><th scope="col">Riesgo medio</th><th scope="col" title="Mediana de oferentes en licitaciones adjudicadas del rubro">Oferentes típicos</th></tr></thead>
+          <tbody id="op-rubros"></tbody>
+        </table>
+        <h3>Licitaciones abiertas con más riesgo de quedar desiertas</h3>
+        <ul class="abiertas" id="op-abiertas"></ul>
+        <p class="nota">Una desierta no siempre significa falta de interés: en el 69% de los casos hubo ofertas que no cumplieron las bases. Revisa los requisitos antes de postular.</p>
+      </section>
+    </aside>
   </div>
 
   <footer>
@@ -272,6 +302,37 @@ $("monto").addEventListener("blur", () => {
   $("monto").value = n ? n.toLocaleString("es-CL") : "";
 });
 $("ficha").addEventListener("submit", (ev) => { ev.preventDefault(); estimar(datos()); });
+const esc = (t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const FUENTES_OPORTUNIDADES = [
+  // se actualiza cada día en el repositorio; la copia local sirve si GitHub no responde
+  "https://raw.githubusercontent.com/CarlosIgRuz/compras-publicas-cl/main/reports/oportunidades.json",
+  "oportunidades.json",
+];
+
+async function cargarOportunidades() {
+  let d = null;
+  for (const url of FUENTES_OPORTUNIDADES) {
+    try { const r = await fetch(url, { cache: "no-cache" }); if (r.ok) { d = await r.json(); break; } } catch (e) { /* siguiente fuente */ }
+  }
+  if (!d || !d.rubros || !d.rubros.length) return;
+  const fecha = new Date(d.generado).toLocaleDateString("es-CL", { day: "numeric", month: "long" });
+  $("op-nota").textContent = `Licitaciones publicadas en los últimos ${d.ventana.dias} días, según el modelo. Actualizado el ${fecha}.`;
+  const tope = Math.max(...d.rubros.map((r) => r.probabilidad_media));
+  $("op-rubros").innerHTML = d.rubros.slice(0, 8).map((r) => `
+    <tr><td>${esc(r.rubro)}<br><small class="nota">${r.publicadas} publicadas</small></td>
+    <td><span class="medidor" aria-hidden="true"><i style="width:${(100 * r.probabilidad_media / tope).toFixed(0)}%"></i></span>${pct(r.probabilidad_media)}</td>
+    <td>${r.oferentes_mediana ?? "–"}</td></tr>`).join("");
+  const ahora = new Date();
+  const vigentes = d.abiertas.filter((x) => new Date(x.cierre.replace(" ", "T")) > ahora).slice(0, 6);
+  $("op-abiertas").innerHTML = vigentes.length ? vigentes.map((x) => `
+    <li><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.nombre.toLowerCase().replace(/^./, (c) => c.toUpperCase()))}</a>
+    <span class="p">${pct(x.probabilidad)}</span>
+    <small>${esc(x.organismo)}. Cierra el ${new Date(x.cierre.replace(" ", "T")).toLocaleDateString("es-CL", { day: "numeric", month: "long" })}.</small></li>`).join("")
+    : `<li><small>No hay licitaciones abiertas en la lista de hoy.</small></li>`;
+  $("oportunidades").hidden = false;
+}
+
+cargarOportunidades();
 cargar().catch(() => {
   $("error").textContent = "No se pudo cargar la información del modelo. Recarga la página.";
   $("error").hidden = false;

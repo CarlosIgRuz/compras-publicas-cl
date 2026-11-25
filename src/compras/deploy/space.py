@@ -32,6 +32,9 @@ def preparar(destino: Path, raiz: Path = Path(".")) -> Path:
     modelo = exportar_web(raiz / "artifacts" / "modelo")
     (destino / "modelo.json").write_text(json.dumps(modelo, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     shutil.copy2(raiz / "space" / "README.md", destino / "README.md")
+    ranking = raiz / "reports" / "oportunidades.json"
+    if ranking.exists():  # copia de respaldo; la página lee primero la versión diaria del repo
+        shutil.copy2(ranking, destino / "oportunidades.json")
     return destino
 
 

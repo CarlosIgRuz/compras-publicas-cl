@@ -25,18 +25,21 @@ jobs:
         with: { python-version: "3.11" }
       - run: pip install duckdb dbt-duckdb pandas numpy scikit-learn lightgbm fastapi
       - name: Construir el warehouse
-        run: dbt build --project-dir dbt --profiles-dir dbt
+        run: dbt build --project-dir dbt --profiles-dir dbt --threads 2
       - name: Puntuar licitaciones recién publicadas
         env: { PYTHONPATH: src }
         run: python -m compras.monitor.puntuar
       - name: Reporte de monitoreo
         env: { PYTHONPATH: src }
         run: python -m compras.monitor.reporte
+      - name: Ranking de oportunidades (lo lee la demo)
+        env: { PYTHONPATH: src }
+        run: python -m compras.monitor.oportunidades
       - name: Guardar predicciones y reporte
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/predicciones reports/monitoreo.md reports/monitoreo.json 2>/dev/null || true
+          git add data/predicciones reports/monitoreo.md reports/monitoreo.json reports/oportunidades.json 2>/dev/null || true
           git diff --cached --quiet && exit 0
           git commit -m "data: monitoreo $(date -u +%F) [Fuente: Dirección ChileCompra]"
           git pull --rebase

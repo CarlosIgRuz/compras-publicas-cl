@@ -173,6 +173,14 @@ def modelo_json():
     return _modelo_web()
 
 
+@app.get("/oportunidades.json", include_in_schema=False)
+def oportunidades_json():
+    ruta = Path(os.environ.get("OPORTUNIDADES", "reports/oportunidades.json"))
+    if not ruta.exists():
+        raise HTTPException(404, "Aún no hay ranking de oportunidades")
+    return FileResponse(ruta, media_type="application/json")
+
+
 @app.get("/health")
 def health():
     m = modelo()

@@ -94,7 +94,8 @@ def test_carpeta_del_space_tiene_lo_necesario(tmp_path):
     if not (raiz / "artifacts/modelo/lightgbm.txt").exists():
         _pytest.skip("requiere el modelo real")
     c = preparar(tmp_path / "space", raiz)
-    assert sorted(p.name for p in c.iterdir()) == ["README.md", "index.html", "modelo.js", "modelo.json"]
+    archivos = {p.name for p in c.iterdir()}
+    assert {"README.md", "index.html", "modelo.js", "modelo.json"} <= archivos <= {"README.md", "index.html", "modelo.js", "modelo.json", "oportunidades.json"}
     readme = (c / "README.md").read_text()
     assert "sdk: static" in readme and "app_file: index.html" in readme
     assert "Dirección ChileCompra" in (c / "index.html").read_text()
