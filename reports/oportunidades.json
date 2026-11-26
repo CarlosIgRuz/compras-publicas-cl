@@ -1,92 +1,102 @@
 {
- "generado": "2026-11-25T20:05-03:00",
+ "generado": "2026-11-26T19:34-03:00",
  "ventana": {
   "dias": 28,
-  "hasta": "2026-11-23"
+  "hasta": "2026-11-24"
  },
  "rubros": [
   {
    "rubro": "Servicios de cuidado personal y domésticos",
-   "publicadas": 85,
-   "probabilidad_media": 0.3414,
-   "pct_alto": 0.5529,
+   "publicadas": 87,
+   "probabilidad_media": 0.3396,
+   "pct_alto": 0.5517,
    "tasa_desierta_historica": 0.3292,
    "oferentes_mediana": 2.0
   },
   {
    "rubro": "Servicios básicos y de información pública",
-   "publicadas": 119,
-   "probabilidad_media": 0.331,
-   "pct_alto": 0.521,
+   "publicadas": 123,
+   "probabilidad_media": 0.3295,
+   "pct_alto": 0.4959,
    "tasa_desierta_historica": 0.3241,
    "oferentes_mediana": 2.0
   },
   {
    "rubro": "Combustibles, lubricantes y anticorrosivos",
-   "publicadas": 35,
-   "probabilidad_media": 0.3061,
-   "pct_alto": 0.4571,
+   "publicadas": 34,
+   "probabilidad_media": 0.3055,
+   "pct_alto": 0.4706,
    "tasa_desierta_historica": 0.3303,
    "oferentes_mediana": 2.0
   },
   {
-   "rubro": "Servicios de transporte, almacenaje y correo",
-   "publicadas": 328,
-   "probabilidad_media": 0.2784,
-   "pct_alto": 0.2073,
-   "tasa_desierta_historica": 0.2793,
-   "oferentes_mediana": 2.0
-  },
-  {
    "rubro": "Maquinaria para minería y perforación",
-   "publicadas": 35,
-   "probabilidad_media": 0.2764,
-   "pct_alto": 0.2,
+   "publicadas": 36,
+   "probabilidad_media": 0.283,
+   "pct_alto": 0.2222,
    "tasa_desierta_historica": 0.292,
    "oferentes_mediana": 3.0
   },
   {
+   "rubro": "Servicios de transporte, almacenaje y correo",
+   "publicadas": 324,
+   "probabilidad_media": 0.277,
+   "pct_alto": 0.1975,
+   "tasa_desierta_historica": 0.2793,
+   "oferentes_mediana": 2.0
+  },
+  {
    "rubro": "Equipamiento para manejo y estiba de materiales",
-   "publicadas": 70,
-   "probabilidad_media": 0.2728,
-   "pct_alto": 0.3429,
-   "tasa_desierta_historica": 0.2353,
+   "publicadas": 74,
+   "probabilidad_media": 0.2759,
+   "pct_alto": 0.3514,
+   "tasa_desierta_historica": 0.2348,
    "oferentes_mediana": 4.0
   },
   {
    "rubro": "Vehículos y equipamiento en general",
-   "publicadas": 203,
-   "probabilidad_media": 0.2698,
-   "pct_alto": 0.1724,
+   "publicadas": 200,
+   "probabilidad_media": 0.2659,
+   "pct_alto": 0.155,
    "tasa_desierta_historica": 0.2693,
    "oferentes_mediana": 3.0
   },
   {
    "rubro": "Equipos y suministros de defensa, orden público, protección y seguridad",
    "publicadas": 163,
-   "probabilidad_media": 0.267,
-   "pct_alto": 0.2699,
+   "probabilidad_media": 0.2628,
+   "pct_alto": 0.2515,
    "tasa_desierta_historica": 0.2708,
    "oferentes_mediana": 3.0
   },
   {
-   "rubro": "Artículos para plantas y animales",
-   "publicadas": 52,
-   "probabilidad_media": 0.2576,
-   "pct_alto": 0.1923,
-   "tasa_desierta_historica": 0.2578,
-   "oferentes_mediana": 3.0
-  },
-  {
    "rubro": "Servicios de Viajes, alimentación, alojamiento y entretenimiento",
-   "publicadas": 216,
-   "probabilidad_media": 0.2544,
-   "pct_alto": 0.1944,
+   "publicadas": 212,
+   "probabilidad_media": 0.2555,
+   "pct_alto": 0.1981,
    "tasa_desierta_historica": 0.2202,
    "oferentes_mediana": 2.0
+  },
+  {
+   "rubro": "Maquinaria para generación y distribución de energía",
+   "publicadas": 75,
+   "probabilidad_media": 0.255,
+   "pct_alto": 0.12,
+   "tasa_desierta_historica": 0.2544,
+   "oferentes_mediana": 4.0
   }
  ],
  "abiertas": [
+  {
+   "codigo": "761391-173-L126",
+   "nombre": "DE/72/GUB/CURSO AUXILIAR DE FARMACIA PARA 02 FUNCIONARIOS",
+   "organismo": "FUERZA AEREA DE CHILE COMANDO LOGISTICO",
+   "rubro": "Educación, formación, entrenamiento y capacitación",
+   "probabilidad": 0.6491,
+   "nivel": "alto",
+   "cierre": "2026-12-02 15:00",
+   "url": "https://www.mercadopublico.cl/Procurement/Modules/RFB/DetailsAcquisition.aspx?idlicitacion=761391-173-L126"
+  },
   {
    "codigo": "3494-36-CO26",
    "nombre": "SERVICIO DE TURISMO CON FINES PEDAGÓGICOS VEGA REDONDA.-",
@@ -98,14 +108,14 @@
    "url": "https://www.mercadopublico.cl/Procurement/Modules/RFB/DetailsAcquisition.aspx?idlicitacion=3494-36-CO26"
   },
   {
-   "codigo": "1660-171-L126",
-   "nombre": "COMPRA DE SERVICIO ADMINISTRATIVO PARA EL HOSPITAL DE SALAMANCA, PARA APOYO A LA GESTIÓN DEL NIVEL PRIMARIO DE SALUD.",
+   "codigo": "1660-174-L126",
+   "nombre": "CONVENIO DE COMPRA DE PAN HALLULLA O MARRAQUETA PARA PACIENTES HOSPITALIZADOS",
    "organismo": "SERVICIO SALUD COQUIMBO HOSP DE SALAMANC",
-   "rubro": "Servicios profesionales, administrativos y consultorías de gestión empresarial",
-   "probabilidad": 0.5846,
+   "rubro": "Alimentos, bebidas y tabaco",
+   "probabilidad": 0.5924,
    "nivel": "alto",
-   "cierre": "2026-11-26 15:00",
-   "url": "https://www.mercadopublico.cl/Procurement/Modules/RFB/DetailsAcquisition.aspx?idlicitacion=1660-171-L126"
+   "cierre": "2026-12-03 15:00",
+   "url": "https://www.mercadopublico.cl/Procurement/Modules/RFB/DetailsAcquisition.aspx?idlicitacion=1660-174-L126"
   },
   {
    "codigo": "2405-173-CO26",
@@ -116,6 +126,16 @@
    "nivel": "alto",
    "cierre": "2026-12-03 10:00",
    "url": "https://www.mercadopublico.cl/Procurement/Modules/RFB/DetailsAcquisition.aspx?idlicitacion=2405-173-CO26"
+  },
+  {
+   "codigo": "2859-50-CO26",
+   "nombre": "vestuario para las funcionarias UDA",
+   "organismo": "UNIVERSIDAD DE ATACAMA",
+   "rubro": "Servicios de cuidado personal y domésticos",
+   "probabilidad": 0.566,
+   "nivel": "alto",
+   "cierre": "2026-12-04 16:39",
+   "url": "https://www.mercadopublico.cl/Procurement/Modules/RFB/DetailsAcquisition.aspx?idlicitacion=2859-50-CO26"
   },
   {
    "codigo": "3885-69-LE26",
@@ -148,14 +168,14 @@
    "url": "https://www.mercadopublico.cl/Procurement/Modules/RFB/DetailsAcquisition.aspx?idlicitacion=748-12-L126"
   },
   {
-   "codigo": "652-70-CO26",
-   "nombre": "SERVICIO TRASLADO Y HABILITACION PARA GENERADOR",
-   "organismo": "SERVICIO DE SALUD ARAUCO",
-   "rubro": "Servicios de transporte, almacenaje y correo",
-   "probabilidad": 0.552,
+   "codigo": "2658-373-L126",
+   "nombre": "Alternador Bosch original",
+   "organismo": "I MUNICIPALIDAD DE ANCUD",
+   "rubro": "Maquinaria para generación y distribución de energía",
+   "probabilidad": 0.5543,
    "nivel": "alto",
-   "cierre": "2026-11-26 15:36",
-   "url": "https://www.mercadopublico.cl/Procurement/Modules/RFB/DetailsAcquisition.aspx?idlicitacion=652-70-CO26"
+   "cierre": "2026-12-03 15:01",
+   "url": "https://www.mercadopublico.cl/Procurement/Modules/RFB/DetailsAcquisition.aspx?idlicitacion=2658-373-L126"
   },
   {
    "codigo": "5584-2-CO26",
@@ -186,26 +206,6 @@
    "nivel": "alto",
    "cierre": "2026-11-30 15:00",
    "url": "https://www.mercadopublico.cl/Procurement/Modules/RFB/DetailsAcquisition.aspx?idlicitacion=14-36-CO26"
-  },
-  {
-   "codigo": "1081988-8-L126",
-   "nombre": "Servicio de Catering para actividad tarde para jubilados de Bienestar. Hospital de Tocopilla",
-   "organismo": "SERVICIO DE SALUD ANTOFAGASTA HOSPITAL M",
-   "rubro": "Servicios de Viajes, alimentación, alojamiento y entretenimiento",
-   "probabilidad": 0.5328,
-   "nivel": "alto",
-   "cierre": "2026-12-01 19:00",
-   "url": "https://www.mercadopublico.cl/Procurement/Modules/RFB/DetailsAcquisition.aspx?idlicitacion=1081988-8-L126"
-  },
-  {
-   "codigo": "2146-87-L126",
-   "nombre": "MANTENCIÓN EXTINTORES HOSP. ANDACOLLO",
-   "organismo": "SERVICIO DE SALUD COQUIMBO HOSPITAL DE ANDACOLLO",
-   "rubro": "Equipos y suministros de defensa, orden público, protección y seguridad",
-   "probabilidad": 0.5279,
-   "nivel": "alto",
-   "cierre": "2026-11-30 15:05",
-   "url": "https://www.mercadopublico.cl/Procurement/Modules/RFB/DetailsAcquisition.aspx?idlicitacion=2146-87-L126"
   }
  ],
  "fuente": "Dirección ChileCompra"
