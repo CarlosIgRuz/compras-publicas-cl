@@ -1,87 +1,87 @@
 {
- "generado": "2026-11-26T19:34-03:00",
+ "generado": "2026-11-27T19:19-03:00",
  "ventana": {
   "dias": 28,
-  "hasta": "2026-11-24"
+  "hasta": "2026-11-25"
  },
  "rubros": [
   {
    "rubro": "Servicios de cuidado personal y domésticos",
-   "publicadas": 87,
-   "probabilidad_media": 0.3396,
-   "pct_alto": 0.5517,
-   "tasa_desierta_historica": 0.3292,
+   "publicadas": 83,
+   "probabilidad_media": 0.3329,
+   "pct_alto": 0.5181,
+   "tasa_desierta_historica": 0.3286,
    "oferentes_mediana": 2.0
   },
   {
    "rubro": "Servicios básicos y de información pública",
-   "publicadas": 123,
-   "probabilidad_media": 0.3295,
-   "pct_alto": 0.4959,
-   "tasa_desierta_historica": 0.3241,
+   "publicadas": 121,
+   "probabilidad_media": 0.3304,
+   "pct_alto": 0.5041,
+   "tasa_desierta_historica": 0.3242,
    "oferentes_mediana": 2.0
   },
   {
    "rubro": "Combustibles, lubricantes y anticorrosivos",
-   "publicadas": 34,
-   "probabilidad_media": 0.3055,
-   "pct_alto": 0.4706,
-   "tasa_desierta_historica": 0.3303,
+   "publicadas": 35,
+   "probabilidad_media": 0.3076,
+   "pct_alto": 0.4857,
+   "tasa_desierta_historica": 0.3333,
    "oferentes_mediana": 2.0
   },
   {
-   "rubro": "Maquinaria para minería y perforación",
-   "publicadas": 36,
-   "probabilidad_media": 0.283,
-   "pct_alto": 0.2222,
-   "tasa_desierta_historica": 0.292,
-   "oferentes_mediana": 3.0
-  },
-  {
    "rubro": "Servicios de transporte, almacenaje y correo",
-   "publicadas": 324,
-   "probabilidad_media": 0.277,
-   "pct_alto": 0.1975,
-   "tasa_desierta_historica": 0.2793,
+   "publicadas": 325,
+   "probabilidad_media": 0.2795,
+   "pct_alto": 0.2062,
+   "tasa_desierta_historica": 0.2806,
    "oferentes_mediana": 2.0
   },
   {
    "rubro": "Equipamiento para manejo y estiba de materiales",
-   "publicadas": 74,
-   "probabilidad_media": 0.2759,
-   "pct_alto": 0.3514,
-   "tasa_desierta_historica": 0.2348,
+   "publicadas": 75,
+   "probabilidad_media": 0.2755,
+   "pct_alto": 0.3467,
+   "tasa_desierta_historica": 0.2328,
    "oferentes_mediana": 4.0
   },
   {
+   "rubro": "Maquinaria para minería y perforación",
+   "publicadas": 35,
+   "probabilidad_media": 0.2686,
+   "pct_alto": 0.1714,
+   "tasa_desierta_historica": 0.2926,
+   "oferentes_mediana": 3.0
+  },
+  {
    "rubro": "Vehículos y equipamiento en general",
-   "publicadas": 200,
-   "probabilidad_media": 0.2659,
-   "pct_alto": 0.155,
-   "tasa_desierta_historica": 0.2693,
+   "publicadas": 197,
+   "probabilidad_media": 0.2665,
+   "pct_alto": 0.1624,
+   "tasa_desierta_historica": 0.2677,
    "oferentes_mediana": 3.0
   },
   {
    "rubro": "Equipos y suministros de defensa, orden público, protección y seguridad",
-   "publicadas": 163,
-   "probabilidad_media": 0.2628,
-   "pct_alto": 0.2515,
-   "tasa_desierta_historica": 0.2708,
+   "publicadas": 166,
+   "probabilidad_media": 0.2648,
+   "pct_alto": 0.259,
+   "tasa_desierta_historica": 0.2702,
    "oferentes_mediana": 3.0
   },
   {
    "rubro": "Servicios de Viajes, alimentación, alojamiento y entretenimiento",
-   "publicadas": 212,
-   "probabilidad_media": 0.2555,
-   "pct_alto": 0.1981,
-   "tasa_desierta_historica": 0.2202,
+   "publicadas": 203,
+   "probabilidad_media": 0.2559,
+   "pct_alto": 0.197,
+   "tasa_desierta_historica": 0.2174,
    "oferentes_mediana": 2.0
   },
   {
    "rubro": "Maquinaria para generación y distribución de energía",
-   "publicadas": 75,
-   "probabilidad_media": 0.255,
-   "pct_alto": 0.12,
+   "publicadas": 74,
+   "probabilidad_media": 0.2545,
+   "pct_alto": 0.1216,
    "tasa_desierta_historica": 0.2544,
    "oferentes_mediana": 4.0
   }
